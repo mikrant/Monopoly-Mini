@@ -96,9 +96,14 @@ export function useGameEngine() {
         }
         draft.currentPlayerIndex = nextPlayerIndex;
         draft.doublesCount = 0;
-        draft.turnState = { type: 'AWAITING_ROLL' };
         
         const nextPlayer = draft.players[nextPlayerIndex];
+        if (nextPlayer.inJail) {
+            draft.turnState = { type: 'AWAITING_JAIL_ACTION' };
+        } else {
+            draft.turnState = { type: 'AWAITING_ROLL' };
+        }
+        
         addLog(`It's ${nextPlayer.name}'s turn.`);
     }));
   }, [addLog]);
@@ -265,12 +270,15 @@ export function useGameEngine() {
 
   const rollDice = () => {
     setGameState(produce(draft => {
-        if (!draft || draft.turnState.type !== 'AWAITING_ROLL') return;
+        if (!draft || (draft.turnState.type !== 'AWAITING_ROLL' && draft.turnState.type !== 'AWAITING_JAIL_ACTION')) return;
         
         if (draft.players[draft.currentPlayerIndex].inJail) {
             draft.turnState = { type: 'AWAITING_JAIL_ACTION' };
             return;
         }
+
+        if (draft.turnState.type !== 'AWAITING_ROLL') return;
+
         draft.turnState = { type: 'PROCESSING' };
     }));
     
@@ -763,5 +771,3 @@ export function useGameEngine() {
     lastEvent,
   };
 }
-
-    

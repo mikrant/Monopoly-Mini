@@ -54,7 +54,7 @@ export function PlayerHUD({
   onJailAction,
   onPlayerClick,
 }: PlayerHUDProps) {
-    const canRoll = turnState.type === 'AWAITING_ROLL';
+    const canRoll = turnState.type === 'AWAITING_ROLL' && !currentPlayer?.inJail;
     const canEndTurn = turnState.type === 'TURN_ENDED';
     const isInJail = turnState.type === 'AWAITING_JAIL_ACTION';
     const canManage = turnState.type === 'AWAITING_ROLL' || turnState.type === 'TURN_ENDED';
