@@ -686,25 +686,14 @@ export function useGameEngine() {
         addLog(logMsg);
         setLastEvent({title: 'Trade', description: logMsg});
 
-        setGameState(produce(draft => {
-            if (!draft) return;
-
-            if (accepted) {
+        if (accepted) {
+            setGameState(produce(draft => {
+                if (!draft) return;
                 const proposer = draft.players.find(p => p.id === offer.fromPlayerId)!;
                 const receiver = draft.players.find(p => p.id === offer.toPlayerId)!;
 
-                const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
-                const receiverCashChange = offer.moneyOffered - offer.moneyRequested;
-
-                proposer.money += proposerCashChange;
-                receiver.money += receiverCashChange;
-
-                if (proposerCashChange !== 0) {
-                    addTransaction(proposer.id, `Trade with ${receiver.name}`, proposerCashChange);
-                }
-                if (receiverCashChange !== 0) {
-                    addTransaction(receiver.id, `Trade with ${proposer.name}`, receiverCashChange);
-                }
+                proposer.money += offer.moneyRequested - offer.moneyOffered;
+                receiver.money += offer.moneyOffered - offer.moneyRequested;
                 
                 const transferProperties = (from: Player, to: Player, indices: number[]) => {
                     indices.forEach(pIdx => {
@@ -728,11 +717,27 @@ export function useGameEngine() {
                 
                 transferProperties(proposer, receiver, offer.propertiesOffered);
                 transferProperties(receiver, proposer, offer.propertiesRequested);
+                
+                draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+            }));
+
+            const proposer = gameState!.players.find(p => p.id === offer.fromPlayerId)!;
+            const receiver = gameState!.players.find(p => p.id === offer.toPlayerId)!;
+            const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
+            if (proposerCashChange !== 0) {
+                addTransaction(proposer.id, `Trade with ${receiver.name}`, proposerCashChange);
             }
-            
-            draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
-         }));
-    }, [addLog, gameState, addTransaction]);
+            const receiverCashChange = offer.moneyOffered - offer.moneyRequested;
+            if (receiverCashChange !== 0) {
+                addTransaction(receiver.id, `Trade with ${proposer.name}`, receiverCashChange);
+            }
+        } else {
+            setGameState(produce(draft => {
+                if (!draft) return;
+                draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+            }));
+        }
+     }, [addLog, gameState, addTransaction]);
 
   const handleModalAction = (action: 'manage_properties' | 'trade_prompt' | 'close_modal') => {
     setGameState(produce(draft => {
