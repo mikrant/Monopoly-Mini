@@ -187,7 +187,7 @@ export function useGameEngine() {
                     discard.length = 0;
                 }
                 const card = deck.pop()!;
-                const cardLogMsg = `${player.name} drew: ${card.text}`;
+                const cardLogMsg = `${player.name} drew a card.`;
                 addLog(cardLogMsg);
                 setLastEvent({title: `${deckType === 'chance' ? 'Chance' : 'Community Chest'}`, description: card.text});
                 if (card.type !== 'get_out_of_jail') discard.push(card);
@@ -660,7 +660,7 @@ export function useGameEngine() {
   const proposeTrade = useCallback((offer: TradeOffer) => {
         setGameState(produce(draft => {
             if(!draft) return;
-            draft.turnState = { type: 'AWAITING_TRADE_RESPONSE', offer };
+            draft.turnState = { type: 'PROPOSING_TRADE', offer };
         }));
     }, []);
 
