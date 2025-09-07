@@ -484,6 +484,7 @@ export function useGameEngine() {
                 setIsRolling(false);
                 
                 setGameState(produce(draft2 => {
+                    if (!draft2) return;
                     const player2 = draft2.players[draft2.currentPlayerIndex];
                     if (d1 === d2) {
                         addLog('Doubles! You are out of jail.');
@@ -685,23 +686,23 @@ export function useGameEngine() {
         setLastEvent({title: 'Trade', description: logMsg});
 
         if (accepted) {
-             setGameState(produce(draft => {
+            const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
+            const receiverCashChange = offer.moneyOffered - offer.moneyRequested;
+
+            if (proposerCashChange !== 0) {
+                addTransaction(offer.fromPlayerId, `Trade with ${receiverName}`, proposerCashChange);
+            }
+            if (receiverCashChange !== 0) {
+                addTransaction(offer.toPlayerId, `Trade with ${proposerName}`, receiverCashChange);
+            }
+
+            setGameState(produce(draft => {
                 if(!draft) return;
                 const proposer = draft.players.find(p => p.id === offer.fromPlayerId)!;
                 const receiver = draft.players.find(p => p.id === offer.toPlayerId)!;
 
-                const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
-                const receiverCashChange = offer.moneyOffered - offer.moneyRequested;
-
                 proposer.money += proposerCashChange;
                 receiver.money += receiverCashChange;
-
-                if (proposerCashChange !== 0) {
-                  addTransaction(proposer.id, `Trade with ${receiver.name}`, proposerCashChange);
-                }
-                if (receiverCashChange !== 0) {
-                  addTransaction(receiver.id, `Trade with ${proposer.name}`, receiverCashChange);
-                }
                 
                 const transferProperties = (from: Player, to: Player, indices: number[]) => {
                     indices.forEach(pIdx => {
@@ -725,12 +726,15 @@ export function useGameEngine() {
                 
                 transferProperties(proposer, receiver, offer.propertiesOffered);
                 transferProperties(receiver, proposer, offer.propertiesRequested);
+                
+                draft.turnState = { type: 'AWAITING_ROLL' };
              }));
+        } else {
+            setGameState(produce(draft => {
+                if (!draft) return;
+                draft.turnState = { type: 'AWAITING_ROLL' };
+            }));
         }
-        setGameState(produce(draft => {
-            if (!draft) return;
-            draft.turnState = { type: 'AWAITING_ROLL' };
-        }));
     }, [addLog, gameState, addTransaction]);
 
   const handleModalAction = (action: 'manage_properties' | 'trade_prompt' | 'close_modal') => {
@@ -782,5 +786,7 @@ export function useGameEngine() {
     lastEvent,
   };
 }
+
+    
 
     
