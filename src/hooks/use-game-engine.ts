@@ -270,7 +270,7 @@ export function useGameEngine() {
 
   const rollDice = () => {
     setGameState(produce(draft => {
-        if (!draft || (draft.turnState.type !== 'AWAITING_ROLL' && draft.turnState.type !== 'AWAITING_JAIL_ACTION')) return;
+        if (!draft) return;
         
         if (draft.players[draft.currentPlayerIndex].inJail) {
             draft.turnState = { type: 'AWAITING_JAIL_ACTION' };
@@ -689,11 +689,19 @@ export function useGameEngine() {
                 const proposer = draft.players.find(p => p.id === offer.fromPlayerId)!;
                 const receiver = draft.players.find(p => p.id === offer.toPlayerId)!;
 
-                proposer.money -= offer.moneyOffered;
-                receiver.money += offer.moneyOffered;
+                if (offer.moneyOffered > 0) {
+                    proposer.money -= offer.moneyOffered;
+                    receiver.money += offer.moneyOffered;
+                    addTransaction(proposer.id, `Paid ${receiver.name} in trade`, -offer.moneyOffered);
+                    addTransaction(receiver.id, `Received from ${proposer.name} in trade`, offer.moneyOffered);
+                }
                 
-                receiver.money -= offer.moneyRequested;
-                proposer.money += offer.moneyRequested;
+                if (offer.moneyRequested > 0) {
+                    receiver.money -= offer.moneyRequested;
+                    proposer.money += offer.moneyRequested;
+                    addTransaction(receiver.id, `Paid ${proposer.name} in trade`, -offer.moneyRequested);
+                    addTransaction(proposer.id, `Received from ${receiver.name} in trade`, offer.moneyRequested);
+                }
                 
                 const transferProperties = (from: Player, to: Player, indices: number[]) => {
                     indices.forEach(pIdx => {
@@ -711,6 +719,8 @@ export function useGameEngine() {
                                 from.utilities = from.utilities.filter(p => p !== pIdx);
                                 to.utilities.push(pIdx);
                             }
+                            addTransaction(from.id, `Traded ${property.name} to ${to.name}`, 0);
+                            addTransaction(to.id, `Received ${property.name} from ${from.name}`, 0);
                         }
                     });
                 };
@@ -723,7 +733,7 @@ export function useGameEngine() {
             if (!draft) return;
             draft.turnState = { type: 'AWAITING_ROLL' };
         }));
-    }, [addLog, gameState]);
+    }, [addLog, gameState, addTransaction]);
 
   const handleModalAction = (action: 'manage_properties' | 'trade_prompt' | 'close_modal') => {
     setGameState(produce(draft => {
@@ -774,3 +784,5 @@ export function useGameEngine() {
     lastEvent,
   };
 }
+
+    
