@@ -57,7 +57,7 @@ export function useGameEngine() {
   const [log, setLog] = useState<string[]>([]);
   const [lastEvent, setLastEvent] = useState<LastEvent | null>({ title: 'Game Started', description: 'Good luck!'});
   
-  const currentPlayer = useMemo(() => gameState?.players[gameState.currentPlayerIndex], [gameState]);
+  const currentPlayer = useMemo(() => gameState?.players.find(p => p.id === gameState.currentPlayerIndex), [gameState]);
 
   const addLog = useCallback((message: string) => {
     setLog(prev => {
@@ -636,7 +636,8 @@ export function useGameEngine() {
                 }
                 break;
             case 'unmortgage':
-                const unmortgageCost = ((space as any).price / 2) * 1.1;
+                const mortgageValue = (space as any).price / 2;
+                const unmortgageCost = mortgageValue + (mortgageValue / 10);
                 if ((space as any).mortgaged && player.money >= unmortgageCost) {
                     player.money -= unmortgageCost;
                     (space as any).mortgaged = false;
@@ -685,24 +686,25 @@ export function useGameEngine() {
         addLog(logMsg);
         setLastEvent({title: 'Trade', description: logMsg});
 
-        if (accepted) {
-            const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
-            const receiverCashChange = offer.moneyOffered - offer.moneyRequested;
+        setGameState(produce(draft => {
+            if (!draft) return;
 
-            if (proposerCashChange !== 0) {
-                addTransaction(offer.fromPlayerId, `Trade with ${receiverName}`, proposerCashChange);
-            }
-            if (receiverCashChange !== 0) {
-                addTransaction(offer.toPlayerId, `Trade with ${proposerName}`, receiverCashChange);
-            }
-
-            setGameState(produce(draft => {
-                if(!draft) return;
+            if (accepted) {
                 const proposer = draft.players.find(p => p.id === offer.fromPlayerId)!;
                 const receiver = draft.players.find(p => p.id === offer.toPlayerId)!;
 
+                const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
+                const receiverCashChange = offer.moneyOffered - offer.moneyRequested;
+
                 proposer.money += proposerCashChange;
                 receiver.money += receiverCashChange;
+
+                if (proposerCashChange !== 0) {
+                    addTransaction(proposer.id, `Trade with ${receiver.name}`, proposerCashChange);
+                }
+                if (receiverCashChange !== 0) {
+                    addTransaction(receiver.id, `Trade with ${proposer.name}`, receiverCashChange);
+                }
                 
                 const transferProperties = (from: Player, to: Player, indices: number[]) => {
                     indices.forEach(pIdx => {
@@ -726,15 +728,10 @@ export function useGameEngine() {
                 
                 transferProperties(proposer, receiver, offer.propertiesOffered);
                 transferProperties(receiver, proposer, offer.propertiesRequested);
-                
-                draft.turnState = { type: 'AWAITING_ROLL' };
-             }));
-        } else {
-            setGameState(produce(draft => {
-                if (!draft) return;
-                draft.turnState = { type: 'AWAITING_ROLL' };
-            }));
-        }
+            }
+            
+            draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+         }));
     }, [addLog, gameState, addTransaction]);
 
   const handleModalAction = (action: 'manage_properties' | 'trade_prompt' | 'close_modal') => {
@@ -745,7 +742,12 @@ export function useGameEngine() {
         if(action === 'close_modal') {
              if (draft.turnState.type === 'MANAGING_PROPERTIES' || draft.turnState.type === 'PROPOSING_TRADE') {
                  const isDoubles = draft.doublesCount > 0;
-                 draft.turnState = isDoubles ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+                 const activePlayer = draft.players[draft.currentPlayerIndex];
+                 if (activePlayer.inJail) {
+                     draft.turnState = { type: 'AWAITING_JAIL_ACTION' };
+                 } else {
+                     draft.turnState = isDoubles ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+                 }
              }
         }
     }));
@@ -786,7 +788,3 @@ export function useGameEngine() {
     lastEvent,
   };
 }
-
-    
-
-    

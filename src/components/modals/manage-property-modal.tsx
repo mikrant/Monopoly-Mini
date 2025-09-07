@@ -91,6 +91,8 @@ export function ManagePropertyModal({ turnState, player, board, onManageProperty
             {playerProperties.map((space) => {
               if (space.type !== 'property' && space.type !== 'railroad' && space.type !== 'utility') return null;
               const spaceIndex = getPropertyIndex(space);
+              const mortgageValue = space.price / 2;
+              const unmortgageCost = mortgageValue + (mortgageValue / 10);
               return (
                 <Card key={spaceIndex} className={cn("flex flex-col", space.mortgaged && "bg-muted")}>
                   <CardHeader className="p-2">
@@ -133,9 +135,9 @@ export function ManagePropertyModal({ turnState, player, board, onManageProperty
                             size="sm"
                             className="h-8 text-xs"
                             onClick={() => onManageProperty(spaceIndex, 'unmortgage')}
-                            disabled={isPayingDebt || player.money < (space.price / 2) * 1.1}
+                            disabled={isPayingDebt || player.money < unmortgageCost}
                          >
-                            Unmortgage (${(space.price / 2) * 1.1})
+                            Unmortgage (${unmortgageCost})
                          </Button>
                      ) : (
                          <Button 
@@ -145,7 +147,7 @@ export function ManagePropertyModal({ turnState, player, board, onManageProperty
                             onClick={() => onManageProperty(spaceIndex, 'mortgage')}
                             disabled={space.type === 'property' && space.houses > 0}
                         >
-                            Mortgage (${space.price / 2})
+                            Mortgage (${mortgageValue})
                         </Button>
                      )}
                   </CardFooter>
