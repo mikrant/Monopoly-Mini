@@ -140,7 +140,8 @@ export function useGameEngine() {
                         rent = space.rent[space.houses];
                         if(ownerOwnsAll && space.houses === 0) rent *= 2;
                     } else if (space.type === 'railroad'){
-                        rent = 25 * Math.pow(2, owner.railroads.length - 1);
+                        const RENT_LEVELS = [25, 50, 100, 200];
+                        rent = RENT_LEVELS[owner.railroads.length - 1];
                     } else if(space.type === 'utility'){
                         const lastRoll = dice[0] + dice[1];
                         rent = lastRoll * (owner.utilities.length === 1 ? 4 : 10);
@@ -762,3 +763,5 @@ export function useGameEngine() {
     lastEvent,
   };
 }
+
+    
