@@ -271,8 +271,9 @@ export function useGameEngine() {
   const rollDice = () => {
     setGameState(produce(draft => {
         if (!draft) return;
+        const player = draft.players[draft.currentPlayerIndex];
         
-        if (draft.players[draft.currentPlayerIndex].inJail) {
+        if (player.inJail) {
             draft.turnState = { type: 'AWAITING_JAIL_ACTION' };
             return;
         }
@@ -689,18 +690,17 @@ export function useGameEngine() {
                 const proposer = draft.players.find(p => p.id === offer.fromPlayerId)!;
                 const receiver = draft.players.find(p => p.id === offer.toPlayerId)!;
 
-                if (offer.moneyOffered > 0) {
-                    proposer.money -= offer.moneyOffered;
-                    receiver.money += offer.moneyOffered;
-                    addTransaction(proposer.id, `Paid ${receiver.name} in trade`, -offer.moneyOffered);
-                    addTransaction(receiver.id, `Received from ${proposer.name} in trade`, offer.moneyOffered);
+                const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
+                const receiverCashChange = offer.moneyOffered - offer.moneyRequested;
+
+                proposer.money += proposerCashChange;
+                receiver.money += receiverCashChange;
+
+                if (proposerCashChange !== 0) {
+                  addTransaction(proposer.id, `Trade with ${receiver.name}`, proposerCashChange);
                 }
-                
-                if (offer.moneyRequested > 0) {
-                    receiver.money -= offer.moneyRequested;
-                    proposer.money += offer.moneyRequested;
-                    addTransaction(receiver.id, `Paid ${proposer.name} in trade`, -offer.moneyRequested);
-                    addTransaction(proposer.id, `Received from ${receiver.name} in trade`, offer.moneyRequested);
+                if (receiverCashChange !== 0) {
+                  addTransaction(receiver.id, `Trade with ${proposer.name}`, receiverCashChange);
                 }
                 
                 const transferProperties = (from: Player, to: Player, indices: number[]) => {
@@ -719,8 +719,6 @@ export function useGameEngine() {
                                 from.utilities = from.utilities.filter(p => p !== pIdx);
                                 to.utilities.push(pIdx);
                             }
-                            addTransaction(from.id, `Traded ${property.name} to ${to.name}`, 0);
-                            addTransaction(to.id, `Received ${property.name} from ${from.name}`, 0);
                         }
                     });
                 };
