@@ -112,7 +112,6 @@ export function PlayerHUD({
   PlayerItem.displayName = "PlayerItem";
 
   const renderJailActions = () => {
-    if (!isInJail) return null;
     return (
       <div className="grid grid-cols-1 gap-1.5 w-full">
         <p className="text-center text-xs font-medium text-muted-foreground">You are in jail. What will you do?</p>
