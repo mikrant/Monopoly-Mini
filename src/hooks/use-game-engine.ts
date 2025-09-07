@@ -668,9 +668,12 @@ export function useGameEngine() {
   const proposeTrade = useCallback((offer: TradeOffer) => {
         setGameState(produce(draft => {
             if(!draft) return;
-            draft.turnState = { type: 'PROPOSING_TRADE', offer };
+            const logMsg = `${draft.players.find(p => p.id === offer.fromPlayerId)?.name} proposed a trade to ${draft.players.find(p => p.id === offer.toPlayerId)?.name}.`;
+            addLog(logMsg);
+            setLastEvent({title: 'Trade Proposed', description: logMsg});
+            draft.turnState = { type: 'AWAITING_TRADE_RESPONSE', offer };
         }));
-    }, []);
+    }, [addLog, setLastEvent]);
 
     const respondToTrade = useCallback((offer: TradeOffer, accepted: boolean) => {
         const proposerName = gameState?.players.find(p => p.id === offer.fromPlayerId)?.name;
