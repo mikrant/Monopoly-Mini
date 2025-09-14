@@ -92,7 +92,7 @@ export function ManagePropertyModal({ turnState, player, board, onManageProperty
               if (space.type !== 'property' && space.type !== 'railroad' && space.type !== 'utility') return null;
               const spaceIndex = getPropertyIndex(space);
               const mortgageValue = space.price / 2;
-              const unmortgageCost = mortgageValue + (mortgageValue / 10);
+              const unmortgageCost = mortgageValue + Math.ceil(mortgageValue * 0.1);
               return (
                 <Card key={spaceIndex} className={cn("flex flex-col", space.mortgaged && "bg-muted")}>
                   <CardHeader className="p-2">

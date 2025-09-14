@@ -637,7 +637,7 @@ export function useGameEngine() {
                 break;
             case 'unmortgage':
                 const mortgageValue = (space as any).price / 2;
-                const unmortgageCost = mortgageValue + (mortgageValue / 10);
+                const unmortgageCost = mortgageValue + Math.ceil(mortgageValue * 0.1);
                 if ((space as any).mortgaged && player.money >= unmortgageCost) {
                     player.money -= unmortgageCost;
                     (space as any).mortgaged = false;
@@ -679,22 +679,37 @@ export function useGameEngine() {
     }, [addLog, setLastEvent]);
 
     const respondToTrade = useCallback((offer: TradeOffer, accepted: boolean) => {
-        const proposerName = gameState?.players.find(p => p.id === offer.fromPlayerId)?.name;
-        const receiverName = gameState?.players.find(p => p.id === offer.toPlayerId)?.name;
-        
-        const logMsg = accepted ? `Trade between ${proposerName} and ${receiverName} accepted!` : `Trade between ${proposerName} and ${receiverName} was rejected.`;
-        addLog(logMsg);
-        setLastEvent({title: 'Trade', description: logMsg});
+        setGameState(produce(draft => {
+            if (!draft) return;
 
-        if (accepted) {
-            setGameState(produce(draft => {
-                if (!draft) return;
-                const proposer = draft.players.find(p => p.id === offer.fromPlayerId)!;
-                const receiver = draft.players.find(p => p.id === offer.toPlayerId)!;
+            const proposer = draft.players.find(p => p.id === offer.fromPlayerId)!;
+            const receiver = draft.players.find(p => p.id === offer.toPlayerId)!;
+            const proposerName = proposer.name;
+            const receiverName = receiver.name;
 
+            const logMsg = accepted 
+                ? `Trade between ${proposerName} and ${receiverName} accepted!` 
+                : `Trade between ${proposerName} and ${receiverName} was rejected.`;
+            
+            addLog(logMsg);
+            setLastEvent({title: 'Trade', description: logMsg});
+
+            if (accepted) {
+                // Update money
                 proposer.money += offer.moneyRequested - offer.moneyOffered;
                 receiver.money += offer.moneyOffered - offer.moneyRequested;
                 
+                // Add cash transactions
+                const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
+                if (proposerCashChange !== 0) {
+                     proposer.transactions.unshift({ description: `Trade with ${receiver.name}`, amount: proposerCashChange });
+                }
+                const receiverCashChange = offer.moneyOffered - offer.moneyRequested;
+                if (receiverCashChange !== 0) {
+                    receiver.transactions.unshift({ description: `Trade with ${proposer.name}`, amount: receiverCashChange });
+                }
+                
+                // Helper for property transfer
                 const transferProperties = (from: Player, to: Player, indices: number[]) => {
                     indices.forEach(pIdx => {
                         const property = draft.board[pIdx];
@@ -717,27 +732,11 @@ export function useGameEngine() {
                 
                 transferProperties(proposer, receiver, offer.propertiesOffered);
                 transferProperties(receiver, proposer, offer.propertiesRequested);
-                
-                draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
-            }));
-
-            const proposer = gameState!.players.find(p => p.id === offer.fromPlayerId)!;
-            const receiver = gameState!.players.find(p => p.id === offer.toPlayerId)!;
-            const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
-            if (proposerCashChange !== 0) {
-                addTransaction(proposer.id, `Trade with ${receiver.name}`, proposerCashChange);
             }
-            const receiverCashChange = offer.moneyOffered - offer.moneyRequested;
-            if (receiverCashChange !== 0) {
-                addTransaction(receiver.id, `Trade with ${proposer.name}`, receiverCashChange);
-            }
-        } else {
-            setGameState(produce(draft => {
-                if (!draft) return;
-                draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
-            }));
-        }
-     }, [addLog, gameState, addTransaction]);
+            
+            draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+        }));
+     }, [addLog]);
 
   const handleModalAction = (action: 'manage_properties' | 'trade_prompt' | 'close_modal') => {
     setGameState(produce(draft => {
