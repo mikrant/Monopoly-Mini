@@ -601,14 +601,14 @@ export function useGameEngine() {
             const housesOnGroup = colorGroupSpaces.map(s => s.houses);
 
             if (manageAction === 'buy_house') {
-                if (space.houses >= Math.min(...housesOnGroup) + 1) {
+                if (space.houses > Math.min(...housesOnGroup)) {
                     addLog('You must build houses evenly across the color group.');
                     return;
                 }
             }
             
             if (manageAction === 'sell_house') {
-                if (space.houses <= Math.max(...housesOnGroup) - 1) {
+                if (space.houses < Math.max(...housesOnGroup)) {
                     addLog('You must sell houses evenly across the color group.');
                     return;
                 }
@@ -804,5 +804,7 @@ export function useGameEngine() {
     lastEvent,
   };
 }
+
+    
 
     
