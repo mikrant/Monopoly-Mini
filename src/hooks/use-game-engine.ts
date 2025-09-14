@@ -61,7 +61,7 @@ export function useGameEngine() {
 
   const addLog = useCallback((message: string) => {
     setLog(prev => {
-      if(prev.length > 0 && prev[0].endsWith(message)) return prev;
+      if(prev.length > 0 && prev[0] === message) return prev;
       return [message, ...prev.slice(0, 99)]
     });
     console.log(message);
@@ -179,8 +179,6 @@ export function useGameEngine() {
                     discard.length = 0;
                 }
                 const card = deck.pop()!;
-                const cardLogMsg = `${player.name} drew a card.`;
-                addLog(cardLogMsg);
                 setLastEvent({title: `${deckType === 'chance' ? 'Chance' : 'Community Chest'}`, description: card.text});
                 if (card.type !== 'get_out_of_jail') discard.push(card);
                 draft.turnState = { type: 'AWAITING_CARD_ACTION', card, isChance: deckType === 'chance' };
@@ -321,16 +319,15 @@ export function useGameEngine() {
             case 'get_out_of_jail':
                  player.getOutOfJailCards++;
                  logMsg = `${player.name} received a Get Out of Jail Free card.`;
-                 addLog(logMsg);
                 break;
             case 'pay':
                 logMsg = `${player.name} paid $${card.amount}.`;
                 if (player.money >= card.amount) {
                     player.money -= card.amount;
                     player.transactions.unshift({ description: card.text, amount: -card.amount });
-                    addLog(logMsg);
                 } else {
                     draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt: { debtorId: player.id, amount: card.amount } };
+                    addLog(logMsg);
                     return;
                 }
                 break;
@@ -347,9 +344,9 @@ export function useGameEngine() {
                              p.transactions.unshift({ description: `Received from ${player.name}`, amount: card.amount });
                          }
                      });
-                    addLog(logMsg);
                  } else {
                     draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt: { debtorId: player.id, amount: totalPaid } };
+                    addLog(logMsg);
                     return;
                  }
                 break;
@@ -361,9 +358,9 @@ export function useGameEngine() {
                 if (player.money >= totalCost) {
                     player.money -= totalCost;
                     player.transactions.unshift({ description: card.text, amount: -totalCost });
-                    addLog(logMsg);
                 } else {
                     draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt: { debtorId: player.id, amount: totalCost } };
+                    addLog(logMsg);
                     return;
                 }
                 break;
@@ -371,7 +368,6 @@ export function useGameEngine() {
                 player.money += card.amount;
                 logMsg = `${player.name} received $${card.amount}.`;
                 player.transactions.unshift({ description: card.text, amount: card.amount });
-                addLog(logMsg);
                 break;
             case 'receive_per_player':
                  let totalReceived = 0;
@@ -385,13 +381,14 @@ export function useGameEngine() {
                      }
                  });
                  logMsg = `${player.name} received $${card.amount} from each player, for a total of $${totalReceived}.`;
-                 addLog(logMsg);
                 break;
              case 'go_to_jail':
                 player.position = JAIL_POSITION;
                 player.inJail = true;
                 draft.doublesCount = 0;
                 draft.turnState = { type: 'TURN_ENDED' };
+                logMsg = `${player.name} was sent to jail.`;
+                addLog(logMsg);
                 return;
             case 'advance':
                 const oldPos = player.position;
@@ -403,6 +400,8 @@ export function useGameEngine() {
                   addLog(goLogMsg);
                   setLastEvent({title: 'Passed GO', description: goLogMsg});
                 }
+                logMsg = `${player.name} advanced to ${draft.board[player.position].name}.`;
+                addLog(logMsg);
                 landOnSpace(player.id);
                 return;
             case 'advance_nearest':
@@ -425,12 +424,14 @@ export function useGameEngine() {
                       setLastEvent({title: 'Passed GO', description: goLogMsg});
                     }
                     player.position = nearestPos;
+                    logMsg = `${player.name} advanced to the nearest ${card.target}, ${draft.board[player.position].name}.`;
+                    addLog(logMsg);
                     landOnSpace(player.id);
                     return;
                 }
                 break;
         }
-
+        addLog(logMsg);
         if(logMsg) setLastEvent({title: 'Card Action', description: logMsg});
         draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
     }));
@@ -636,7 +637,7 @@ export function useGameEngine() {
                 break;
             case 'unmortgage':
                 const mortgageValue = Math.floor(space.price / 2);
-                const unmortgageCost = mortgageValue + Math.floor(mortgageValue * 0.1);
+                const unmortgageCost = mortgageValue + Math.ceil(mortgageValue * 0.1);
                 if ((space as any).mortgaged && player.money >= unmortgageCost) {
                     player.money -= unmortgageCost;
                     (space as any).mortgaged = false;
