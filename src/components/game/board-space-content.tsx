@@ -79,23 +79,23 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
   }
   
   const CornerSpace = ({ icon, text }: { icon: React.ReactNode, text: string }) => (
-      <div className="flex flex-col items-center justify-center h-full w-full p-1 text-center text-[10px]">
+      <div className="flex flex-col items-center justify-center h-full w-full p-1 text-center text-xs">
         <span className="font-bold uppercase leading-tight">{text}</span>
         {icon}
       </div>
   )
   
   const renderContent = () => {
-    const commonTextStyle = "text-center text-[9px] leading-tight";
+    const commonTextStyle = "text-center text-xs leading-tight";
     const iconSize = "h-5 w-5";
     const cornerIconSize = "h-8 w-8";
     
     switch (space.type) {
       case 'property':
         return (
-          <div className="flex h-full flex-col items-center justify-center p-0.5 text-center text-[9px] leading-tight">
-              <span className={cn("uppercase font-bold text-center", PROPERTY_TEXT_COLORS[space.color])}>{space.name}</span>
-              <span className="text-[10px]">${space.price}</span>
+          <div className="flex h-full flex-col items-center justify-center p-0.5 text-center leading-tight">
+              <span className={cn("uppercase font-bold text-center text-xs", PROPERTY_TEXT_COLORS[space.color])}>{space.name}</span>
+              <span className="text-xs">${space.price}</span>
           </div>
         );
       case 'railroad':
@@ -103,7 +103,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
           <div className={cn("flex flex-col items-center justify-around h-full p-1 gap-0.5 text-center", commonTextStyle)}>
             <span className="font-bold uppercase text-center">{space.name}</span>
             <Train className={cn(iconSize, "text-red-400")} />
-            <span className="text-[10px]">${space.price}</span>
+            <span className="text-xs">${space.price}</span>
           </div>
         );
       case 'utility':
@@ -112,20 +112,20 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
           <div className={cn("flex flex-col items-center justify-around h-full p-1 gap-0.5 text-center", commonTextStyle)}>
             <span className="font-bold uppercase">{space.name}</span>
             <UtilityIcon className={cn(iconSize, "text-yellow-400")} />
-            <span className="text-[10px]">${space.price}</span>
+            <span className="text-xs">${space.price}</span>
           </div>
         );
       case 'chance':
         return (
           <div className="flex flex-col items-center justify-around h-full p-1 text-center text-xs">
-            <span className={cn("font-bold uppercase text-[10px]", commonTextStyle)}>Chance</span>
+            <span className={cn("font-bold uppercase", commonTextStyle)}>Chance</span>
             <HelpCircle className={cn(cornerIconSize, "text-blue-500")} />
           </div>
         );
       case 'community-chest':
         return (
           <div className="flex flex-col items-center justify-around h-full p-1 text-center text-xs">
-            <span className={cn("font-bold uppercase text-[10px]", commonTextStyle)}>Community Chest</span>
+            <span className={cn("font-bold uppercase", commonTextStyle)}>Community Chest</span>
             <Landmark className={cn(cornerIconSize, "text-yellow-500")} />
           </div>
         );
@@ -134,7 +134,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
           <div className={cn("flex flex-col items-center justify-around h-full p-1 text-center", commonTextStyle)}>
             <span className="font-bold uppercase">{space.name}</span>
             {space.name === 'Income Tax' ? <Banknote className={cn("my-0.5", iconSize, "text-yellow-400")} /> : <Gem className={cn("my-0.5", iconSize, "text-yellow-400")} />}
-            <span>Pay ${space.cost}</span>
+            <span className="text-xs">Pay ${space.cost}</span>
           </div>
         );
       case 'corner':
