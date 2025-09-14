@@ -67,19 +67,6 @@ export function useGameEngine() {
     console.log(message);
   }, []);
   
-  const addTransaction = useCallback((playerId: number, description: string, amount: number) => {
-    setGameState(produce(draft => {
-      if(!draft) return;
-      const player = draft.players.find(p => p.id === playerId);
-      if(player) {
-        player.transactions.unshift({ description, amount });
-        if (player.transactions.length > 50) {
-            player.transactions.pop();
-        }
-      }
-    }))
-  }, []);
-
   const endTurn = useCallback(() => {
     setGameState(produce(draft => {
         if(!draft) return;
@@ -158,8 +145,8 @@ export function useGameEngine() {
                     if (player.money >= rent) {
                         player.money -= rent;
                         owner.money += rent;
-                        addTransaction(player.id, `Paid rent for ${space.name}`, -rent);
-                        addTransaction(owner.id, `Received rent from ${player.name}`, rent);
+                        player.transactions.unshift({ description: `Paid rent for ${space.name}`, amount: -rent });
+                        owner.transactions.unshift({ description: `Received rent from ${player.name}`, amount: rent });
                         draft.turnState = isDoubles ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
                     } else {
                         const debt: Debt = { debtorId: player.id, creditorId: owner.id, amount: rent };
@@ -175,7 +162,7 @@ export function useGameEngine() {
                 setLastEvent({title: 'Tax Paid', description: taxLogMsg});
                 if (player.money >= space.cost) {
                     player.money -= space.cost;
-                    addTransaction(player.id, `Paid ${space.name}`, -space.cost);
+                    player.transactions.unshift({ description: `Paid ${space.name}`, amount: -space.cost });
                     draft.turnState = isDoubles ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
                 } else {
                     const debt: Debt = { debtorId: player.id, amount: space.cost };
@@ -210,7 +197,7 @@ export function useGameEngine() {
                 break;
         }
     }));
-  }, [addLog, addTransaction, dice]);
+  }, [addLog, dice]);
 
   const movePlayer = useCallback((d1: number, d2: number) => {
     const totalMove = d1 + d2;
@@ -226,7 +213,7 @@ export function useGameEngine() {
           if (player.position < oldPosition) { // Passed GO
             player.money += 200;
             const logMsg = `${player.name} passed GO and collected $200.`;
-            addTransaction(player.id, 'Passed GO', 200);
+            player.transactions.unshift({ description: 'Passed GO', amount: 200 });
             addLog(logMsg);
             setLastEvent({title: 'Passed GO', description: logMsg});
           }
@@ -239,7 +226,7 @@ export function useGameEngine() {
       }
     };
     step();
-  }, [setGameState, addLog, addTransaction, landOnSpace, gameState]);
+  }, [setGameState, addLog, landOnSpace, gameState]);
 
   const processTurn = useCallback((d1: number, d2: number) => {
     setGameState(produce(draft => {
@@ -310,7 +297,7 @@ export function useGameEngine() {
             else if (space.type === 'utility') player.utilities.push(draft.turnState.spaceIndex);
             
             const logMsg = `${player.name} bought ${space.name} for $${space.price}.`;
-            addTransaction(player.id, `Bought ${space.name}`, -space.price);
+            player.transactions.unshift({ description: `Bought ${space.name}`, amount: -space.price });
             addLog(logMsg);
             setLastEvent({title: 'Property Bought', description: logMsg});
         } else {
@@ -337,7 +324,7 @@ export function useGameEngine() {
                 logMsg = `${player.name} paid $${card.amount}.`;
                 if (player.money >= card.amount) {
                     player.money -= card.amount;
-                    addTransaction(player.id, card.text, -card.amount);
+                    player.transactions.unshift({ description: card.text, amount: -card.amount });
                     addLog(logMsg);
                 } else {
                     draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt: { debtorId: player.id, amount: card.amount } };
@@ -350,11 +337,11 @@ export function useGameEngine() {
                  logMsg = `${player.name} paid $${card.amount} to each player.`;
                  if(player.money >= totalPaid) {
                     player.money -= totalPaid;
-                    addTransaction(player.id, card.text, -totalPaid);
+                    player.transactions.unshift({ description: card.text, amount: -totalPaid });
                     draft.players.forEach(p => {
                          if (p.id !== player.id && !p.bankrupt) {
                              p.money += card.amount;
-                             addTransaction(p.id, `Received from ${player.name}`, card.amount);
+                             p.transactions.unshift({ description: `Received from ${player.name}`, amount: card.amount });
                          }
                      });
                     addLog(logMsg);
@@ -370,7 +357,7 @@ export function useGameEngine() {
                 logMsg = `${player.name} paid $${totalCost} for building repairs.`;
                 if (player.money >= totalCost) {
                     player.money -= totalCost;
-                    addTransaction(player.id, card.text, -totalCost);
+                    player.transactions.unshift({ description: card.text, amount: -totalCost });
                     addLog(logMsg);
                 } else {
                     draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt: { debtorId: player.id, amount: totalCost } };
@@ -380,7 +367,7 @@ export function useGameEngine() {
             case 'receive':
                 player.money += card.amount;
                 logMsg = `${player.name} received $${card.amount}.`;
-                addTransaction(player.id, card.text, card.amount);
+                player.transactions.unshift({ description: card.text, amount: card.amount });
                 addLog(logMsg);
                 break;
             case 'receive_per_player':
@@ -389,8 +376,8 @@ export function useGameEngine() {
                      if (p.id !== player.id && !p.bankrupt) {
                         p.money -= card.amount;
                         player.money += card.amount;
-                        addTransaction(p.id, `Paid ${player.name}`, -card.amount);
-                        addTransaction(player.id, `Received from ${p.name}`, card.amount);
+                        p.transactions.unshift({ description: `Paid ${player.name}`, amount: -card.amount });
+                        player.transactions.unshift({ description: `Received from ${p.name}`, amount: card.amount });
                         totalReceived += card.amount;
                      }
                  });
@@ -409,7 +396,7 @@ export function useGameEngine() {
                 if(player.position < oldPos && !card.relative) {
                   player.money += 200;
                   const goLogMsg = `${player.name} passed GO and collected $200.`;
-                  addTransaction(player.id, 'Passed GO', 200);
+                  player.transactions.unshift({ description: 'Passed GO', amount: 200 });
                   addLog(goLogMsg);
                   setLastEvent({title: 'Passed GO', description: goLogMsg});
                 }
@@ -430,7 +417,7 @@ export function useGameEngine() {
                     if (nearestPos < player.position) {
                       player.money += 200;
                       const goLogMsg = `${player.name} passed GO and collected $200.`;
-                      addTransaction(player.id, 'Passed GO', 200);
+                      player.transactions.unshift({ description: 'Passed GO', amount: 200 });
                       addLog(goLogMsg);
                       setLastEvent({title: 'Passed GO', description: goLogMsg});
                     }
@@ -459,7 +446,7 @@ export function useGameEngine() {
                 const logMsg = `${player.name} paid $50 to get out of jail.`;
                 addLog(logMsg);
                 setLastEvent({title: 'Left Jail', description: logMsg});
-                addTransaction(player.id, 'Paid jail fine', -JAIL_FINE);
+                player.transactions.unshift({ description: 'Paid jail fine', amount: -JAIL_FINE });
                 draft.turnState = { type: 'AWAITING_ROLL' };
             } else {
                 addLog(`${player.name} does not have enough money to pay the fine.`);
@@ -503,7 +490,7 @@ export function useGameEngine() {
                                 player2.money -= JAIL_FINE;
                                 player2.inJail = false;
                                 player2.jailTurns = 0;
-                                addTransaction(player2.id, 'Paid jail fine (3 attempts)', -JAIL_FINE);
+                                player2.transactions.unshift({ description: 'Paid jail fine (3 attempts)', amount: -JAIL_FINE });
                                 processTurn(d1, d2);
                             } else {
                                 const debt: Debt = { debtorId: player2.id, amount: JAIL_FINE };
@@ -517,7 +504,7 @@ export function useGameEngine() {
             }, 500);
         }
     }));
-  }, [addLog, addTransaction, processTurn]);
+  }, [addLog, processTurn]);
 
   const declareBankruptcy = useCallback(() => {
     setGameState(produce(draft => {
@@ -533,7 +520,7 @@ export function useGameEngine() {
         const bankruptcyLog = `${player.name} has gone bankrupt to ${creditorName}!`;
         addLog(bankruptcyLog);
         setLastEvent({ title: 'Bankruptcy', description: bankruptcyLog });
-        addTransaction(debtorId, `Went bankrupt to ${creditorName}`, -player.money);
+        player.transactions.unshift({ description: `Went bankrupt to ${creditorName}`, amount: -player.money });
         
         const assets = [...player.properties, ...player.railroads, ...player.utilities];
         if (creditor) {
@@ -569,7 +556,7 @@ export function useGameEngine() {
             endTurn();
         }
     }));
-  }, [addLog, addTransaction, endTurn]);
+  }, [addLog, endTurn]);
   
   const manageProperty = useCallback((spaceIndex: number, manageAction: 'buy_house' | 'sell_house' | 'mortgage' | 'unmortgage') => {
     setGameState(produce(draft => {
@@ -611,7 +598,7 @@ export function useGameEngine() {
                     const logMsg = `${player.name} built a house on ${space.name} for $${space.houseCost}.`;
                     addLog(logMsg);
                     setLastEvent({title: 'House Built', description: logMsg});
-                    addTransaction(player.id, `Built house on ${space.name}`, -space.houseCost);
+                    player.transactions.unshift({ description: `Built house on ${space.name}`, amount: -space.houseCost });
                 }
                 break;
             case 'sell_house':
@@ -621,30 +608,30 @@ export function useGameEngine() {
                     const logMsg = `${player.name} sold a house on ${space.name} for $${space.houseCost / 2}.`;
                     addLog(logMsg);
                     setLastEvent({title: 'House Sold', description: logMsg});
-                    addTransaction(player.id, `Sold house on ${space.name}`, space.houseCost / 2);
+                    player.transactions.unshift({ description: `Sold house on ${space.name}`, amount: space.houseCost / 2 });
                 }
                 break;
             case 'mortgage':
                 if (!(space as any).mortgaged && (space.type !== 'property' || space.houses === 0)) {
-                    const mortgageValue = (space as any).price / 2;
+                    const mortgageValue = Math.floor(space.price / 2);
                     player.money += mortgageValue;
                     (space as any).mortgaged = true;
                     const logMsg = `${player.name} mortgaged ${space.name} for $${mortgageValue}.`;
                     addLog(logMsg);
                     setLastEvent({title: 'Property Mortgaged', description: logMsg});
-                    addTransaction(player.id, `Mortgaged ${space.name}`, mortgageValue);
+                    player.transactions.unshift({ description: `Mortgaged ${space.name}`, amount: mortgageValue });
                 }
                 break;
             case 'unmortgage':
-                const mortgageValue = (space as any).price / 2;
-                const unmortgageCost = mortgageValue + Math.ceil(mortgageValue * 0.1);
+                const mortgageValue = Math.floor(space.price / 2);
+                const unmortgageCost = mortgageValue + (mortgageValue / 10);
                 if ((space as any).mortgaged && player.money >= unmortgageCost) {
                     player.money -= unmortgageCost;
                     (space as any).mortgaged = false;
                     const logMsg = `${player.name} unmortgaged ${space.name} for $${unmortgageCost}.`;
                     addLog(logMsg);
                     setLastEvent({title: 'Property Unmortgaged', description: logMsg});
-                    addTransaction(player.id, `Unmortgaged ${space.name}`, -unmortgageCost);
+                    player.transactions.unshift({ description: `Unmortgaged ${space.name}`, amount: -unmortgageCost });
                 }
                 break;
         }
@@ -656,9 +643,9 @@ export function useGameEngine() {
                 const debtAmount = draft.turnState.debt.amount;
                 if (creditor) {
                     creditor.money += debtAmount;
-                    addTransaction(creditor.id, `Received debt payment from ${player.name}`, debtAmount);
+                    creditor.transactions.unshift({ description: `Received debt payment from ${player.name}`, amount: debtAmount });
                 }
-                addTransaction(player.id, `Paid debt`, -debtAmount);
+                player.transactions.unshift({ description: `Paid debt`, amount: -debtAmount });
                 const logMsg = `${player.name} paid their debt of $${debtAmount}.`;
                 addLog(logMsg);
                 setLastEvent({title: 'Debt Paid', description: logMsg});
@@ -666,7 +653,7 @@ export function useGameEngine() {
             }
         }
     }));
-  }, [addLog, addTransaction]);
+  }, [addLog]);
   
   const proposeTrade = useCallback((offer: TradeOffer) => {
         setGameState(produce(draft => {
@@ -792,3 +779,5 @@ export function useGameEngine() {
     lastEvent,
   };
 }
+
+    
