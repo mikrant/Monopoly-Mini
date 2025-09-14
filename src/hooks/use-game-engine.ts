@@ -401,7 +401,7 @@ export function useGameEngine() {
                   setLastEvent({title: 'Passed GO', description: goLogMsg});
                 }
                 landOnSpace(player.id);
-                return; // landOnSpace handles the next state
+                return;
             case 'advance_nearest':
                 let currentPosition = player.position;
                 let nearestPos = -1;
@@ -423,7 +423,7 @@ export function useGameEngine() {
                     }
                     player.position = nearestPos;
                     landOnSpace(player.id);
-                    return; // landOnSpace handles the next state
+                    return;
                 }
                 break;
         }
@@ -624,7 +624,7 @@ export function useGameEngine() {
                 break;
             case 'unmortgage':
                 const mortgageValue = Math.floor(space.price / 2);
-                const unmortgageCost = mortgageValue + (mortgageValue / 10);
+                const unmortgageCost = mortgageValue + Math.ceil(mortgageValue * 0.1);
                 if ((space as any).mortgaged && player.money >= unmortgageCost) {
                     player.money -= unmortgageCost;
                     (space as any).mortgaged = false;
@@ -657,36 +657,33 @@ export function useGameEngine() {
   
   const proposeTrade = useCallback((offer: TradeOffer) => {
         setGameState(produce(draft => {
-            if(!draft) return;
+            if(!draft || draft.turnState.type !== 'PROPOSING_TRADE') return;
             const logMsg = `${draft.players.find(p => p.id === offer.fromPlayerId)?.name} proposed a trade to ${draft.players.find(p => p.id === offer.toPlayerId)?.name}.`;
             addLog(logMsg);
             setLastEvent({title: 'Trade Proposed', description: logMsg});
-            draft.turnState = { type: 'AWAITING_TRADE_RESPONSE', offer };
+            draft.turnState = { type: 'AWAITING_TRADE_RESPONSE', offer, previousState: draft.turnState.previousState };
         }));
     }, [addLog, setLastEvent]);
 
     const respondToTrade = useCallback((offer: TradeOffer, accepted: boolean) => {
         setGameState(produce(draft => {
-            if (!draft) return;
+            if (!draft || draft.turnState.type !== 'AWAITING_TRADE_RESPONSE') return;
 
             const proposer = draft.players.find(p => p.id === offer.fromPlayerId)!;
             const receiver = draft.players.find(p => p.id === offer.toPlayerId)!;
-            const proposerName = proposer.name;
-            const receiverName = receiver.name;
 
             const logMsg = accepted 
-                ? `Trade between ${proposerName} and ${receiverName} accepted!` 
-                : `Trade between ${proposerName} and ${receiverName} was rejected.`;
+                ? `Trade between ${proposer.name} and ${receiver.name} accepted!` 
+                : `Trade between ${proposer.name} and ${receiver.name} was rejected.`;
             
             addLog(logMsg);
             setLastEvent({title: 'Trade', description: logMsg});
 
             if (accepted) {
-                // Update money
+                // Money
                 proposer.money += offer.moneyRequested - offer.moneyOffered;
                 receiver.money += offer.moneyOffered - offer.moneyRequested;
                 
-                // Add cash transactions
                 const proposerCashChange = offer.moneyRequested - offer.moneyOffered;
                 if (proposerCashChange !== 0) {
                      proposer.transactions.unshift({ description: `Trade with ${receiver.name}`, amount: proposerCashChange });
@@ -695,8 +692,8 @@ export function useGameEngine() {
                 if (receiverCashChange !== 0) {
                     receiver.transactions.unshift({ description: `Trade with ${proposer.name}`, amount: receiverCashChange });
                 }
-                
-                // Helper for property transfer
+
+                // Properties
                 const transferProperties = (from: Player, to: Player, indices: number[]) => {
                     indices.forEach(pIdx => {
                         const property = draft.board[pIdx];
@@ -721,24 +718,21 @@ export function useGameEngine() {
                 transferProperties(receiver, proposer, offer.propertiesRequested);
             }
             
-            draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+            draft.turnState = draft.turnState.previousState;
         }));
      }, [addLog]);
 
   const handleModalAction = (action: 'manage_properties' | 'trade_prompt' | 'close_modal') => {
     setGameState(produce(draft => {
         if (!draft) return;
-        if(action === 'manage_properties') draft.turnState = { type: 'MANAGING_PROPERTIES' };
-        if(action === 'trade_prompt') draft.turnState = { type: 'PROPOSING_TRADE' };
-        if(action === 'close_modal') {
-             if (draft.turnState.type === 'MANAGING_PROPERTIES' || draft.turnState.type === 'PROPOSING_TRADE') {
-                 const isDoubles = draft.doublesCount > 0;
-                 const activePlayer = draft.players[draft.currentPlayerIndex];
-                 if (activePlayer.inJail) {
-                     draft.turnState = { type: 'AWAITING_JAIL_ACTION' };
-                 } else {
-                     draft.turnState = isDoubles ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
-                 }
+        const currentState = draft.turnState;
+        if(action === 'manage_properties') {
+            draft.turnState = { type: 'MANAGING_PROPERTIES', previousState: currentState };
+        } else if(action === 'trade_prompt') {
+            draft.turnState = { type: 'PROPOSING_TRADE', previousState: currentState };
+        } else if(action === 'close_modal') {
+             if (currentState.type === 'MANAGING_PROPERTIES' || currentState.type === 'PROPOSING_TRADE' || currentState.type === 'AWAITING_TRADE_RESPONSE') {
+                 draft.turnState = currentState.previousState;
              }
         }
     }));

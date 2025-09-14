@@ -114,9 +114,9 @@ export type TurnState =
   | { type: 'AWAITING_JAIL_ACTION' }
   | { type: 'AWAITING_DEBT_PAYMENT'; debt: Debt }
   | { type: 'TURN_ENDED' }
-  | { type: 'MANAGING_PROPERTIES' }
-  | { type: 'PROPOSING_TRADE' }
-  | { type: 'AWAITING_TRADE_RESPONSE'; offer: TradeOffer }
+  | { type: 'MANAGING_PROPERTIES', previousState: TurnState }
+  | { type: 'PROPOSING_TRADE', previousState: TurnState }
+  | { type: 'AWAITING_TRADE_RESPONSE'; offer: TradeOffer, previousState: TurnState }
   | { type: 'AWAITING_CARD_ACTION'; card: Card, isChance: boolean }
   | { type: 'GAME_OVER'; winner: Player };
 
