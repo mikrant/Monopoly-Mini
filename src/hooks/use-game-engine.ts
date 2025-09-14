@@ -138,6 +138,7 @@ export function useGameEngine() {
                     } else if(space.type === 'utility'){
                         const lastRoll = dice[0] + dice[1];
                         rent = lastRoll * (owner.utilities.length === 1 ? 4 : 10);
+                        rent *= rentMultiplier;
                     }
                     
                     const logMsg = `${player.name} owes ${owner.name} $${rent} in rent.`;
@@ -387,13 +388,15 @@ export function useGameEngine() {
                 player.position = JAIL_POSITION;
                 player.inJail = true;
                 draft.doublesCount = 0;
-                draft.turnState = { type: 'TURN_ENDED' };
                 logMsg = `${player.name} was sent to jail.`;
                 addLog(logMsg);
+                draft.turnState = { type: 'TURN_ENDED' };
                 return;
             case 'advance':
                 const oldPos = player.position;
                 player.position = card.relative ? (oldPos + card.position + 40) % 40 : card.position;
+                logMsg = `${player.name} advanced to ${draft.board[player.position].name}.`;
+                addLog(logMsg);
                 if(player.position < oldPos && !card.relative) {
                   player.money += 200;
                   const goLogMsg = `${player.name} passed GO and collected $200.`;
@@ -401,8 +404,6 @@ export function useGameEngine() {
                   addLog(goLogMsg);
                   setLastEvent({title: 'Passed GO', description: goLogMsg});
                 }
-                logMsg = `${player.name} advanced to ${draft.board[player.position].name}.`;
-                addLog(logMsg);
                 landOnSpace(player.id);
                 return;
             case 'advance_nearest':
@@ -440,11 +441,11 @@ export function useGameEngine() {
 
   const handleJailAction = useCallback((jailAction: 'pay' | 'roll' | 'card') => {
     if (!gameState || gameState.turnState.type !== 'AWAITING_JAIL_ACTION') return;
-    
+
+    const player = gameState.players[gameState.currentPlayerIndex];
     if (jailAction === 'roll') {
       setIsRolling(true);
-      const player = gameState.players[gameState.currentPlayerIndex];
-      const playerName = player.name; // Capture name before async operation
+      const playerName = player.name;
       
       setTimeout(() => {
         const d1 = Math.floor(Math.random() * 6) + 1;
@@ -591,20 +592,26 @@ export function useGameEngine() {
 
         if (space.type === 'property' && (manageAction === 'buy_house' || manageAction === 'sell_house')) {
             const groupColor = space.color;
-            const colorGroupSpaces = draft.board.filter(s => s.type === 'property' && s.color === groupColor);
-            const playerOwnsAll = colorGroupSpaces.every(s => (s as any).ownerId === player.id);
+            const colorGroupSpaces = draft.board.filter(s => s.type === 'property' && s.color === groupColor) as PropertySpace[];
+            const playerOwnsAll = colorGroupSpaces.every(s => s.ownerId === player.id);
             if (!playerOwnsAll) {
                 addLog(`You must own all ${groupColor} properties to build.`);
                 return;
             }
-            const housesOnGroup = colorGroupSpaces.map(s => (s as PropertySpace).houses);
-            if (manageAction === 'buy_house' && space.houses >= Math.min(...housesOnGroup) + 1) {
-                addLog('You must build houses evenly across the color group.');
-                return;
+            const housesOnGroup = colorGroupSpaces.map(s => s.houses);
+
+            if (manageAction === 'buy_house') {
+                if (space.houses >= Math.min(...housesOnGroup) + 1) {
+                    addLog('You must build houses evenly across the color group.');
+                    return;
+                }
             }
-            if (manageAction === 'sell_house' && space.houses <= Math.max(...housesOnGroup) - 1) {
-                 addLog('You must sell houses evenly across the color group.');
-                return;
+            
+            if (manageAction === 'sell_house') {
+                if (space.houses <= Math.max(...housesOnGroup) - 1) {
+                    addLog('You must sell houses evenly across the color group.');
+                    return;
+                }
             }
         }
 
@@ -736,7 +743,9 @@ export function useGameEngine() {
                 transferProperties(receiver, proposer, offer.propertiesRequested);
             }
             
-            draft.turnState = draft.turnState.previousState;
+            if (draft.turnState.previousState) {
+                draft.turnState = draft.turnState.previousState;
+            }
         }));
      }, [addLog]);
 
@@ -795,3 +804,5 @@ export function useGameEngine() {
     lastEvent,
   };
 }
+
+    
