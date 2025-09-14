@@ -129,8 +129,7 @@ export function useGameEngine() {
                     if(space.type === 'property'){
                         const colorGroup = draft.board.filter(s => s.type === 'property' && s.color === space.color);
                         const ownerOwnsAll = colorGroup.every(s => (s as any).ownerId === owner.id);
-                        rent = space.rent[space.houses];
-                        if(ownerOwnsAll && space.houses === 0) rent *= 2;
+                        rent = ownerOwnsAll && space.houses === 0 ? space.rent[0] * 2 : space.rent[space.houses];
                     } else if (space.type === 'railroad'){
                         const RENT_LEVELS = [25, 50, 100, 200];
                         rent = RENT_LEVELS[owner.railroads.length - 1];
@@ -809,3 +808,4 @@ export function useGameEngine() {
     
 
     
+

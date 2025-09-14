@@ -95,3 +95,4 @@ export const COMMUNITY_CHEST_CARDS: Card[] = [
     { type: 'receive', text: "You have won second prize in a beauty contest. Collect $10", amount: 10 },
     { type: 'receive', text: "You inherit $100", amount: 100 }
 ];
+

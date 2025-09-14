@@ -31,12 +31,12 @@ export function PropertyInfoModal({ space, owner, onClose }: PropertyInfoModalPr
       return (
         <ul className="space-y-1 text-xs">
           <li className="flex justify-between"><span>Rent</span> <span>${space.rent[0]}</span></li>
-          <li className="flex justify-between"><span>With Color Set</span> <span>${space.rent[1]}</span></li>
-          <li className="flex justify-between"><span>With 1 House</span> <span>${space.rent[2]}</span></li>
-          <li className="flex justify-between"><span>With 2 Houses</span> <span>${space.rent[3]}</span></li>
-          <li className="flex justify-between"><span>With 3 Houses</span> <span>${space.rent[4]}</span></li>
-          <li className="flex justify-between"><span>With 4 Houses</span> <span>${space.rent[5]}</span></li>
-          <li className="flex justify-between"><span>With HOTEL</span> <span className="font-bold">${space.rent[6]}</span></li>
+          <li className="flex justify-between"><span>With Color Set</span> <span>${space.rent[0] * 2}</span></li>
+          <li className="flex justify-between"><span>With 1 House</span> <span>${space.rent[1]}</span></li>
+          <li className="flex justify-between"><span>With 2 Houses</span> <span>${space.rent[2]}</span></li>
+          <li className="flex justify-between"><span>With 3 Houses</span> <span>${space.rent[3]}</span></li>
+          <li className="flex justify-between"><span>With 4 Houses</span> <span>${space.rent[4]}</span></li>
+          <li className="flex justify-between"><span>With HOTEL</span> <span className="font-bold">${space.rent[5]}</span></li>
         </ul>
       );
     }
