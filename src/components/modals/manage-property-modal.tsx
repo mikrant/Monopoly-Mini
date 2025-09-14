@@ -1,7 +1,7 @@
 
 'use client';
 import { useMemo } from 'react';
-import type { TurnState, BoardSpace, Player, PropertySpace } from '@/lib/types';
+import type { TurnState, BoardSpace, Player, PropertySpace, PropertyColor } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -27,6 +27,19 @@ interface ManagePropertyModalProps {
   onDeclareBankruptcy: () => void;
 }
 
+const PROPERTY_TEXT_COLORS: Record<PropertyColor, string> = {
+  brown: '#955436',
+  'light-blue': '#00AEEF',
+  pink: '#d93a96',
+  orange: '#f7941d',
+  red: '#ed1b24',
+  yellow: '#EAB308',
+  green: '#1fb25a',
+  'dark-blue': '#0072bb',
+};
+
+const COLOR_GROUP_ORDER: (PropertyColor | 'railroad' | 'utility')[] = ['brown', 'light-blue', 'pink', 'orange', 'red', 'yellow', 'green', 'dark-blue', 'railroad', 'utility'];
+
 export function ManagePropertyModal({ turnState, player, board, onManageProperty, onClose, onDeclareBankruptcy }: ManagePropertyModalProps) {
   const isManaging = turnState?.type === 'MANAGING_PROPERTIES';
   const isPayingDebt = turnState?.type === 'AWAITING_DEBT_PAYMENT';
@@ -36,7 +49,12 @@ export function ManagePropertyModal({ turnState, player, board, onManageProperty
   const playerProperties = useMemo(() => {
     return player.properties.map(pIndex => board[pIndex] as PropertySpace)
       .concat(player.railroads.map(pIndex => board[pIndex]))
-      .concat(player.utilities.map(pIndex => board[pIndex]));
+      .concat(player.utilities.map(pIndex => board[pIndex]))
+      .sort((a, b) => {
+        const typeA = a.type === 'property' ? a.color : a.type;
+        const typeB = b.type === 'property' ? b.color : b.type;
+        return COLOR_GROUP_ORDER.indexOf(typeA) - COLOR_GROUP_ORDER.indexOf(typeB);
+      });
   }, [player, board]);
 
   const canBuyHouse = (space: PropertySpace) => {
@@ -93,11 +111,13 @@ export function ManagePropertyModal({ turnState, player, board, onManageProperty
               const spaceIndex = getPropertyIndex(space);
               const mortgageValue = space.price / 2;
               const unmortgageCost = mortgageValue + Math.ceil(mortgageValue * 0.1);
+              const titleColor = space.type === 'property' ? PROPERTY_TEXT_COLORS[space.color] : undefined;
+
               return (
                 <Card key={spaceIndex} className={cn("flex flex-col", space.mortgaged && "bg-muted")}>
                   <CardHeader className="p-2">
                      {space.type === 'property' && <div className={cn("h-3 w-full rounded-t-md", PROPERTY_COLORS[space.color])} />}
-                     <CardTitle className="text-sm p-1 text-center">{space.name}</CardTitle>
+                     <CardTitle className="text-sm p-1 text-center font-bold" style={{ color: titleColor }}>{space.name}</CardTitle>
                       {space.mortgaged && <Badge variant="destructive" className="mx-auto text-xs px-1.5 py-0">Mortgaged</Badge>}
                   </CardHeader>
                   <CardContent className="flex-grow p-2">
