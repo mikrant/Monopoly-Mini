@@ -23,6 +23,7 @@ import {
 import { CarIcon, DogIcon, HatIcon, ShipIcon, ShoeIcon, ThimbleIcon } from '../icons/player-pieces';
 import { Trash2 } from 'lucide-react';
 import { Separator } from '../ui/separator';
+import Link from 'next/link';
 
 interface PlayerSetup {
   name: string;
@@ -155,8 +156,13 @@ export function GameSetup({ onGameStart, open = true }: GameSetupProps) {
             />
           </div>
         </div>
-        <DialogFooter>
-          <Button type="button" onClick={handleStart} className="w-full">
+        <DialogFooter className="sm:justify-between gap-2">
+            <Link href="/rules" passHref target="_blank">
+                <Button variant="outline" asChild>
+                    <a>Rules</a>
+                </Button>
+            </Link>
+          <Button type="button" onClick={handleStart}>
             Start Game
           </Button>
         </DialogFooter>
