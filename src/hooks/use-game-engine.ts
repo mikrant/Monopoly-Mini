@@ -255,6 +255,8 @@ export function useGameEngine() {
 
   const rollDice = () => {
     if (!gameState) return;
+    if (gameState.turnState.type !== 'AWAITING_ROLL') return;
+    
     const player = gameState.players[gameState.currentPlayerIndex];
     if (player.inJail) {
         setGameState(produce(draft => {
@@ -263,8 +265,6 @@ export function useGameEngine() {
         }));
         return;
     }
-    
-    if (gameState.turnState.type !== 'AWAITING_ROLL') return;
 
     setGameState(produce(draft => {
         if (!draft) return;
@@ -439,44 +439,44 @@ export function useGameEngine() {
 
   const handleJailAction = useCallback((jailAction: 'pay' | 'roll' | 'card') => {
     if (!gameState || gameState.turnState.type !== 'AWAITING_JAIL_ACTION') return;
-
+    const player = gameState.players[gameState.currentPlayerIndex];
+    
     if (jailAction === 'roll') {
       setIsRolling(true);
-      const playerName = gameState.players[gameState.currentPlayerIndex].name;
       
       setTimeout(() => {
         const d1 = Math.floor(Math.random() * 6) + 1;
         const d2 = Math.floor(Math.random() * 6) + 1;
         setDice([d1, d2]);
-        addLog(`${playerName} rolled a ${d1} and a ${d2}.`);
+        addLog(`${player.name} rolled a ${d1} and a ${d2}.`);
         setIsRolling(false);
         
         setGameState(produce(draft => {
           if (!draft) return;
-          const player = draft.players[draft.currentPlayerIndex];
+          const playerToUpdate = draft.players[draft.currentPlayerIndex];
           if (d1 === d2) {
             addLog('Doubles! You are out of jail.');
             setLastEvent({ title: 'Left Jail', description: 'Rolled doubles' });
-            player.inJail = false;
-            player.jailTurns = 0;
+            playerToUpdate.inJail = false;
+            playerToUpdate.jailTurns = 0;
             draft.doublesCount = 0; // Doubles out of jail doesn't grant another turn
             draft.turnState = { type: 'PROCESSING' };
             movePlayer(d1, d2);
           } else {
             addLog('Not doubles. You remain in jail.');
             setLastEvent({ title: 'Stay in Jail', description: 'Did not roll doubles' });
-            player.jailTurns++;
-            if (player.jailTurns >= 3) {
+            playerToUpdate.jailTurns++;
+            if (playerToUpdate.jailTurns >= 3) {
               addLog('Third attempt failed. You must pay the fine.');
-              if (player.money >= JAIL_FINE) {
-                player.money -= JAIL_FINE;
-                player.inJail = false;
-                player.jailTurns = 0;
-                player.transactions.unshift({ description: 'Paid jail fine (3 attempts)', amount: -JAIL_FINE });
+              if (playerToUpdate.money >= JAIL_FINE) {
+                playerToUpdate.money -= JAIL_FINE;
+                playerToUpdate.inJail = false;
+                playerToUpdate.jailTurns = 0;
+                playerToUpdate.transactions.unshift({ description: 'Paid jail fine (3 attempts)', amount: -JAIL_FINE });
                 draft.turnState = { type: 'PROCESSING' };
                 movePlayer(d1, d2);
               } else {
-                const debt: Debt = { debtorId: player.id, amount: JAIL_FINE };
+                const debt: Debt = { debtorId: playerToUpdate.id, amount: JAIL_FINE };
                 draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt };
               }
             } else {
@@ -517,7 +517,7 @@ export function useGameEngine() {
             }
         }
     }));
-  }, [addLog, processTurn, gameState, movePlayer]);
+  }, [addLog, gameState, movePlayer]);
 
   const declareBankruptcy = useCallback(() => {
     setGameState(produce(draft => {
@@ -626,7 +626,7 @@ export function useGameEngine() {
                 break;
             case 'mortgage':
                 if (!(space as any).mortgaged && (space.type !== 'property' || space.houses === 0)) {
-                    const mortgageValue = Math.floor(space.price / 2);
+                    const mortgageValue = space.price / 2;
                     player.money += mortgageValue;
                     (space as any).mortgaged = true;
                     const logMsg = `${player.name} mortgaged ${space.name} for $${mortgageValue}.`;
@@ -636,8 +636,8 @@ export function useGameEngine() {
                 }
                 break;
             case 'unmortgage':
-                const mortgageValue = Math.floor(space.price / 2);
-                const unmortgageCost = mortgageValue + Math.ceil(mortgageValue * 0.1);
+                const mortgageValue = space.price / 2;
+                const unmortgageCost = mortgageValue + (mortgageValue / 10);
                 if ((space as any).mortgaged && player.money >= unmortgageCost) {
                     player.money -= unmortgageCost;
                     (space as any).mortgaged = false;
@@ -670,7 +670,7 @@ export function useGameEngine() {
   
   const proposeTrade = useCallback((offer: TradeOffer) => {
         setGameState(produce(draft => {
-            if(!draft || (draft.turnState.type !== 'PROPOSING_TRADE' && draft.turnState.type !== 'AWAITING_ROLL' && draft.turnState.type !== 'TURN_ENDED')) return;
+            if(!draft || (draft.turnState.type !== 'AWAITING_ROLL' && draft.turnState.type !== 'TURN_ENDED')) return;
             const logMsg = `${draft.players.find(p => p.id === offer.fromPlayerId)?.name} proposed a trade to ${draft.players.find(p => p.id === offer.toPlayerId)?.name}.`;
             addLog(logMsg);
             setLastEvent({title: 'Trade Proposed', description: logMsg});
