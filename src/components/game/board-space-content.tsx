@@ -95,7 +95,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
         return (
           <div className="flex h-full flex-col items-center justify-center p-0.5 text-center text-[9px] leading-tight">
               <span className={cn("uppercase font-bold text-center", PROPERTY_TEXT_COLORS[space.color])}>{space.name}</span>
-              <span>${space.price}</span>
+              <span className="text-[10px]">${space.price}</span>
           </div>
         );
       case 'railroad':
@@ -103,7 +103,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
           <div className={cn("flex flex-col items-center justify-around h-full p-1 gap-0.5 text-center", commonTextStyle)}>
             <span className="font-bold uppercase text-center">{space.name}</span>
             <Train className={cn(iconSize, "text-red-400")} />
-            <span>${space.price}</span>
+            <span className="text-[10px]">${space.price}</span>
           </div>
         );
       case 'utility':
@@ -112,7 +112,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
           <div className={cn("flex flex-col items-center justify-around h-full p-1 gap-0.5 text-center", commonTextStyle)}>
             <span className="font-bold uppercase">{space.name}</span>
             <UtilityIcon className={cn(iconSize, "text-yellow-400")} />
-            <span>${space.price}</span>
+            <span className="text-[10px]">${space.price}</span>
           </div>
         );
       case 'chance':
