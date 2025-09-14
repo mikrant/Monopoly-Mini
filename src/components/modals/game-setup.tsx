@@ -157,11 +157,9 @@ export function GameSetup({ onGameStart, open = true }: GameSetupProps) {
           </div>
         </div>
         <DialogFooter className="sm:justify-between gap-2">
-            <Link href="/rules" passHref target="_blank">
-                <Button variant="outline" asChild>
-                    <a>Rules</a>
-                </Button>
-            </Link>
+            <Button variant="outline" asChild>
+                <Link href="/rules" target="_blank">Rules</Link>
+            </Button>
           <Button type="button" onClick={handleStart}>
             Start Game
           </Button>
