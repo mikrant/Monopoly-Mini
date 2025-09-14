@@ -15,6 +15,7 @@ import type { BoardSpace, Player } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { JailIcon } from '../icons/jail-icon';
 import './board-space-content.css';
+import { PROPERTY_COLORS } from '@/lib/consts';
 
 interface BoardSpaceContentProps {
   space: BoardSpace;
@@ -79,7 +80,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
     const iconSize = "h-5 w-5";
     const cornerIconSize = "h-8 w-8";
     
-    const containerClasses = "w-full h-full flex flex-col justify-center items-center";
+    const containerClasses = "w-full h-full flex flex-col justify-between";
     
     const contentContainerClasses = cn("bg-card flex flex-col justify-center items-center p-0.5 flex-grow w-full", commonTextStyle);
 
@@ -87,6 +88,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
       case 'property':
         return (
           <div className={containerClasses}>
+             <div className={cn("h-4 w-full flex-shrink-0", PROPERTY_COLORS[space.color])} />
              <div className={cn(contentContainerClasses, "justify-around")}>
                 <span className="font-bold uppercase text-center">{space.name}</span>
                 <span>${space.price}</span>
