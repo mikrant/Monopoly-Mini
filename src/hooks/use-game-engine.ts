@@ -256,17 +256,20 @@ export function useGameEngine() {
   }, [movePlayer, addLog]);
 
   const rollDice = () => {
+    if (!gameState) return;
+    const player = gameState.players[gameState.currentPlayerIndex];
+    if (player.inJail) {
+        setGameState(produce(draft => {
+            if (!draft) return;
+            draft.turnState = { type: 'AWAITING_JAIL_ACTION' };
+        }));
+        return;
+    }
+    
+    if (gameState.turnState.type !== 'AWAITING_ROLL') return;
+
     setGameState(produce(draft => {
         if (!draft) return;
-        const player = draft.players[draft.currentPlayerIndex];
-        
-        if (player.inJail) {
-            draft.turnState = { type: 'AWAITING_JAIL_ACTION' };
-            return;
-        }
-
-        if (draft.turnState.type !== 'AWAITING_ROLL') return;
-
         draft.turnState = { type: 'PROCESSING' };
     }));
     
@@ -434,6 +437,57 @@ export function useGameEngine() {
   }
 
   const handleJailAction = useCallback((jailAction: 'pay' | 'roll' | 'card') => {
+    if (!gameState || gameState.turnState.type !== 'AWAITING_JAIL_ACTION') return;
+
+    if (jailAction === 'roll') {
+      setIsRolling(true);
+      const playerName = gameState.players[gameState.currentPlayerIndex].name;
+      
+      setTimeout(() => {
+        const d1 = Math.floor(Math.random() * 6) + 1;
+        const d2 = Math.floor(Math.random() * 6) + 1;
+        setDice([d1, d2]);
+        addLog(`${playerName} rolled a ${d1} and a ${d2}.`);
+        setIsRolling(false);
+
+        setGameState(produce(draft => {
+          if (!draft) return;
+          const player = draft.players[draft.currentPlayerIndex];
+          if (d1 === d2) {
+            addLog('Doubles! You are out of jail.');
+            setLastEvent({ title: 'Left Jail', description: 'Rolled doubles' });
+            player.inJail = false;
+            player.jailTurns = 0;
+            draft.doublesCount = 0; // Doubles out of jail doesn't grant another turn
+            // The processTurn call is now wrapped in setGameState
+            draft.turnState = { type: 'PROCESSING' };
+            movePlayer(d1,d2);
+          } else {
+            addLog('Not doubles. You remain in jail.');
+            setLastEvent({ title: 'Stay in Jail', description: 'Did not roll doubles' });
+            player.jailTurns++;
+            if (player.jailTurns >= 3) {
+              addLog('Third attempt failed. You must pay the fine.');
+              if (player.money >= JAIL_FINE) {
+                player.money -= JAIL_FINE;
+                player.inJail = false;
+                player.jailTurns = 0;
+                player.transactions.unshift({ description: 'Paid jail fine (3 attempts)', amount: -JAIL_FINE });
+                draft.turnState = { type: 'PROCESSING' };
+                movePlayer(d1, d2);
+              } else {
+                const debt: Debt = { debtorId: player.id, amount: JAIL_FINE };
+                draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt };
+              }
+            } else {
+              draft.turnState = { type: 'TURN_ENDED' };
+            }
+          }
+        }));
+      }, 500);
+      return;
+    }
+    
     setGameState(produce(draft => {
         if (!draft || draft.turnState.type !== 'AWAITING_JAIL_ACTION') return;
         const player = draft.players[draft.currentPlayerIndex];
@@ -461,50 +515,9 @@ export function useGameEngine() {
                 setLastEvent({title: 'Left Jail', description: logMsg});
                 draft.turnState = { type: 'AWAITING_ROLL' };
             }
-        } else if (jailAction === 'roll') {
-            setIsRolling(true);
-            setTimeout(() => {
-                const d1 = Math.floor(Math.random() * 6) + 1;
-                const d2 = Math.floor(Math.random() * 6) + 1;
-                setDice([d1, d2]);
-                addLog(`${player.name} rolled a ${d1} and a ${d2}.`);
-                setIsRolling(false);
-                
-                setGameState(produce(draft2 => {
-                    if (!draft2) return;
-                    const player2 = draft2.players[draft2.currentPlayerIndex];
-                    if (d1 === d2) {
-                        addLog('Doubles! You are out of jail.');
-                        setLastEvent({title: 'Left Jail', description: 'Rolled doubles'});
-                        player2.inJail = false;
-                        player2.jailTurns = 0;
-                        draft2.doublesCount = 0; // Doubles out of jail doesn't grant another turn
-                        processTurn(d1, d2);
-                    } else {
-                        addLog('Not doubles. You remain in jail.');
-                        setLastEvent({title: 'Stay in Jail', description: 'Did not roll doubles'});
-                        player2.jailTurns++;
-                        if (player2.jailTurns >= 3) {
-                            addLog('Third attempt failed. You must pay the fine.');
-                            if(player2.money >= JAIL_FINE) {
-                                player2.money -= JAIL_FINE;
-                                player2.inJail = false;
-                                player2.jailTurns = 0;
-                                player2.transactions.unshift({ description: 'Paid jail fine (3 attempts)', amount: -JAIL_FINE });
-                                processTurn(d1, d2);
-                            } else {
-                                const debt: Debt = { debtorId: player2.id, amount: JAIL_FINE };
-                                draft2.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt };
-                            }
-                        } else {
-                           draft2.turnState = { type: 'TURN_ENDED' };
-                        }
-                    }
-                }));
-            }, 500);
         }
     }));
-  }, [addLog, processTurn]);
+  }, [addLog, processTurn, gameState, movePlayer]);
 
   const declareBankruptcy = useCallback(() => {
     setGameState(produce(draft => {
@@ -649,7 +662,7 @@ export function useGameEngine() {
                 const logMsg = `${player.name} paid their debt of $${debtAmount}.`;
                 addLog(logMsg);
                 setLastEvent({title: 'Debt Paid', description: logMsg});
-                draft.turnState = { type: 'TURN_ENDED' };
+                draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
             }
         }
     }));
@@ -657,11 +670,11 @@ export function useGameEngine() {
   
   const proposeTrade = useCallback((offer: TradeOffer) => {
         setGameState(produce(draft => {
-            if(!draft || draft.turnState.type !== 'PROPOSING_TRADE') return;
+            if(!draft || (draft.turnState.type !== 'PROPOSING_TRADE' && draft.turnState.type !== 'AWAITING_ROLL' && draft.turnState.type !== 'TURN_ENDED')) return;
             const logMsg = `${draft.players.find(p => p.id === offer.fromPlayerId)?.name} proposed a trade to ${draft.players.find(p => p.id === offer.toPlayerId)?.name}.`;
             addLog(logMsg);
             setLastEvent({title: 'Trade Proposed', description: logMsg});
-            draft.turnState = { type: 'AWAITING_TRADE_RESPONSE', offer, previousState: draft.turnState.previousState };
+            draft.turnState = { type: 'AWAITING_TRADE_RESPONSE', offer, previousState: draft.turnState };
         }));
     }, [addLog, setLastEvent]);
 
@@ -727,9 +740,13 @@ export function useGameEngine() {
         if (!draft) return;
         const currentState = draft.turnState;
         if(action === 'manage_properties') {
-            draft.turnState = { type: 'MANAGING_PROPERTIES', previousState: currentState };
+            if(currentState.type === 'AWAITING_ROLL' || currentState.type === 'TURN_ENDED') {
+                draft.turnState = { type: 'MANAGING_PROPERTIES', previousState: currentState };
+            }
         } else if(action === 'trade_prompt') {
-            draft.turnState = { type: 'PROPOSING_TRADE', previousState: currentState };
+            if(currentState.type === 'AWAITING_ROLL' || currentState.type === 'TURN_ENDED') {
+                draft.turnState = { type: 'PROPOSING_TRADE', previousState: currentState };
+            }
         } else if(action === 'close_modal') {
              if (currentState.type === 'MANAGING_PROPERTIES' || currentState.type === 'PROPOSING_TRADE' || currentState.type === 'AWAITING_TRADE_RESPONSE') {
                  draft.turnState = currentState.previousState;
@@ -773,5 +790,3 @@ export function useGameEngine() {
     lastEvent,
   };
 }
-
-    
