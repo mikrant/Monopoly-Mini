@@ -137,7 +137,8 @@ export function useGameEngine() {
                         rent *= rentMultiplier;
                     } else if(space.type === 'utility'){
                         const lastRoll = dice[0] + dice[1];
-                        rent = lastRoll * (owner.utilities.length === 1 ? 4 : 10);
+                        const multiplier = owner.utilities.length === 1 ? 4 : 10;
+                        rent = lastRoll * multiplier;
                         rent *= rentMultiplier;
                     }
                     
