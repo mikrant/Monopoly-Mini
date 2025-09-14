@@ -80,8 +80,6 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
     const iconSize = "h-5 w-5";
     const cornerIconSize = "h-8 w-8";
     
-    const containerClasses = "w-full h-full flex flex-col justify-between";
-    
     const contentContainerClasses = cn("bg-card flex flex-col justify-center items-center p-0.5 flex-grow w-full", commonTextStyle);
 
     switch (space.type) {
@@ -89,7 +87,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
         return (
           <div className="w-full h-full flex flex-col">
             <div className={cn("h-4 w-full flex-shrink-0", PROPERTY_COLORS[space.color])} />
-            <div className="flex-grow flex flex-col justify-around items-center p-0.5 text-center text-[9px] leading-tight">
+            <div className="bg-card flex-grow flex flex-col justify-around items-center p-0.5 text-center text-[9px] leading-tight">
               <span className="font-bold uppercase text-center">{space.name}</span>
               <span>${space.price}</span>
             </div>
