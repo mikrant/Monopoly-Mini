@@ -87,11 +87,11 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
     switch (space.type) {
       case 'property':
         return (
-          <div className={containerClasses}>
-             <div className={cn("h-4 w-full flex-shrink-0", PROPERTY_COLORS[space.color])} />
-             <div className={cn(contentContainerClasses, "justify-around")}>
-                <span className="font-bold uppercase text-center">{space.name}</span>
-                <span>${space.price}</span>
+          <div className="w-full h-full flex flex-col">
+            <div className={cn("h-4 w-full flex-shrink-0", PROPERTY_COLORS[space.color])} />
+            <div className="flex-grow flex flex-col justify-around items-center p-0.5 text-center text-[9px] leading-tight">
+              <span className="font-bold uppercase text-center">{space.name}</span>
+              <span>${space.price}</span>
             </div>
           </div>
         );
