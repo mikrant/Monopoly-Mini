@@ -28,7 +28,7 @@ const PROPERTY_TEXT_COLORS: Record<PropertyColor, string> = {
   pink: 'text-[#d93a96]',
   orange: 'text-[#f7941d]',
   red: 'text-[#ed1b24]',
-  yellow: 'text-[#fef200]',
+  yellow: 'text-[#EAB308]',
   green: 'text-[#1fb25a]',
   'dark-blue': 'text-[#0072bb]',
 };
@@ -90,8 +90,6 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
     const iconSize = "h-5 w-5";
     const cornerIconSize = "h-8 w-8";
     
-    const contentContainerClasses = cn("bg-card flex flex-col justify-center items-center p-0.5 flex-grow w-full", commonTextStyle);
-
     switch (space.type) {
       case 'property':
         return (
