@@ -95,7 +95,7 @@ export function useGameEngine() {
     }));
   }, [addLog]);
 
-  const landOnSpace = useCallback((playerId: number) => {
+  const landOnSpace = useCallback((playerId: number, rentMultiplier = 1) => {
     setGameState(produce(draft => {
         if (!draft) return;
         const player = draft.players.find(p => p.id === playerId);
@@ -134,6 +134,7 @@ export function useGameEngine() {
                     } else if (space.type === 'railroad'){
                         const RENT_LEVELS = [25, 50, 100, 200];
                         rent = RENT_LEVELS[owner.railroads.length - 1];
+                        rent *= rentMultiplier;
                     } else if(space.type === 'utility'){
                         const lastRoll = dice[0] + dice[1];
                         rent = lastRoll * (owner.utilities.length === 1 ? 4 : 10);
@@ -426,7 +427,7 @@ export function useGameEngine() {
                     player.position = nearestPos;
                     logMsg = `${player.name} advanced to the nearest ${card.target}, ${draft.board[player.position].name}.`;
                     addLog(logMsg);
-                    landOnSpace(player.id);
+                    landOnSpace(player.id, card.rentMultiplier);
                     return;
                 }
                 break;
@@ -452,42 +453,41 @@ export function useGameEngine() {
         addLog(`${playerName} rolled a ${d1} and a ${d2}.`);
         setIsRolling(false);
         
-        setGameState(produce(draft => {
-          if (!draft) return;
-          const playerToUpdate = draft.players[draft.currentPlayerIndex];
-          if (d1 === d2) {
-            addLog('Doubles! You are out of jail.');
-            setLastEvent({ title: 'Left Jail', description: 'Rolled doubles' });
-            playerToUpdate.inJail = false;
-            playerToUpdate.jailTurns = 0;
-            draft.doublesCount = 0; // Doubles out of jail doesn't grant another turn
-            draft.turnState = { type: 'PROCESSING' };
-            // This will be handled by movePlayer -> landOnSpace
-          } else {
-            addLog('Not doubles. You remain in jail.');
-            setLastEvent({ title: 'Stay in Jail', description: 'Did not roll doubles' });
-            playerToUpdate.jailTurns++;
-            if (playerToUpdate.jailTurns >= 3) {
-              addLog('Third attempt failed. You must pay the fine.');
-              if (playerToUpdate.money >= JAIL_FINE) {
-                playerToUpdate.money -= JAIL_FINE;
+        if (d1 === d2) {
+            setGameState(produce(draft => {
+                if (!draft) return;
+                const playerToUpdate = draft.players[draft.currentPlayerIndex];
+                addLog('Doubles! You are out of jail.');
+                setLastEvent({ title: 'Left Jail', description: 'Rolled doubles' });
                 playerToUpdate.inJail = false;
                 playerToUpdate.jailTurns = 0;
-                playerToUpdate.transactions.unshift({ description: 'Paid jail fine (3 attempts)', amount: -JAIL_FINE });
+                draft.doublesCount = 0; // Doubles out of jail doesn't grant another turn
                 draft.turnState = { type: 'PROCESSING' };
-              } else {
-                const debt: Debt = { debtorId: playerToUpdate.id, amount: JAIL_FINE };
-                draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt };
-              }
-            } else {
-              draft.turnState = { type: 'TURN_ENDED' };
-            }
-          }
-        }));
-
-        // Move player outside the produce block if they are out of jail
-        if (d1 === d2) {
-          movePlayer(d1, d2);
+            }));
+            movePlayer(d1, d2);
+        } else {
+            setGameState(produce(draft => {
+                if (!draft) return;
+                const playerToUpdate = draft.players[draft.currentPlayerIndex];
+                addLog('Not doubles. You remain in jail.');
+                setLastEvent({ title: 'Stay in Jail', description: 'Did not roll doubles' });
+                playerToUpdate.jailTurns++;
+                if (playerToUpdate.jailTurns >= 3) {
+                  addLog('Third attempt failed. You must pay the fine.');
+                  if (playerToUpdate.money >= JAIL_FINE) {
+                    playerToUpdate.money -= JAIL_FINE;
+                    playerToUpdate.inJail = false;
+                    playerToUpdate.jailTurns = 0;
+                    playerToUpdate.transactions.unshift({ description: 'Paid jail fine (3 attempts)', amount: -JAIL_FINE });
+                    draft.turnState = { type: 'AWAITING_ROLL' };
+                  } else {
+                    const debt: Debt = { debtorId: playerToUpdate.id, amount: JAIL_FINE };
+                    draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt };
+                  }
+                } else {
+                  draft.turnState = { type: 'TURN_ENDED' };
+                }
+            }));
         }
       }, 500);
       return;
@@ -642,7 +642,7 @@ export function useGameEngine() {
                 break;
             case 'unmortgage':
                 const mortgageValue = space.price / 2;
-                const unmortgageCost = Math.ceil(mortgageValue * 1.1);
+                const unmortgageCost = mortgageValue + (mortgageValue / 10);
                 if ((space as any).mortgaged && player.money >= unmortgageCost) {
                     player.money -= unmortgageCost;
                     (space as any).mortgaged = false;

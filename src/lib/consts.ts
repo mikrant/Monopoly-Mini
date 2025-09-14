@@ -63,7 +63,7 @@ export const CHANCE_CARDS: Card[] = [
     { type: 'advance', text: "Advance to Illinois Ave.", position: 24 },
     { type: 'advance', text: "Advance to St. Charles Place.", position: 11 },
     { type: 'advance_nearest', text: "Advance token to nearest Utility. If unowned, you may buy it from the Bank. If owned, throw dice and pay owner a total ten times the amount thrown.", target: 'utility' },
-    { type: 'advance_nearest', text: "Advance token to the nearest Railroad and pay owner twice the rental to which he/she is otherwise entitled. If Railroad is unowned, you may buy it from the Bank.", target: 'railroad' },
+    { type: 'advance_nearest', text: "Advance token to the nearest Railroad and pay owner twice the rental to which he/she is otherwise entitled. If Railroad is unowned, you may buy it from the Bank.", target: 'railroad', rentMultiplier: 2 },
     { type: 'receive', text: "Bank pays you dividend of $50", amount: 50 },
     { type: 'get_out_of_jail', text: "Get Out of Jail Free" },
     { type: 'advance', text: "Go Back 3 Spaces", position: -3, relative: true },

@@ -92,7 +92,7 @@ export interface Player {
 
 export type Card = 
     | { type: 'advance', text: string, position: number, relative?: boolean }
-    | { type: 'advance_nearest', text: string, target: 'utility' | 'railroad'}
+    | { type: 'advance_nearest', text: string, target: 'utility' | 'railroad', rentMultiplier?: number}
     | { type: 'receive', text: string, amount: number }
     | { type: 'pay', text: string, amount: number }
     | { type: 'receive_per_player', text: string, amount: number }
