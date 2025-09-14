@@ -97,7 +97,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
         return (
           <div className={cn("flex flex-col items-center justify-around h-full p-1 gap-0.5 text-center", commonTextStyle)}>
             <span className="font-bold uppercase text-center">{space.name}</span>
-            <Train className={iconSize} />
+            <Train className={cn(iconSize, "text-red-400")} />
             <span>${space.price}</span>
           </div>
         );
@@ -106,7 +106,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
         return (
           <div className={cn("flex flex-col items-center justify-around h-full p-1 gap-0.5 text-center", commonTextStyle)}>
             <span className="font-bold uppercase">{space.name}</span>
-            <UtilityIcon className={iconSize} />
+            <UtilityIcon className={cn(iconSize, "text-yellow-400")} />
             <span>${space.price}</span>
           </div>
         );
@@ -128,7 +128,7 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
         return (
           <div className={cn("flex flex-col items-center justify-around h-full p-1 text-center", commonTextStyle)}>
             <span className="font-bold uppercase">{space.name}</span>
-            {space.name === 'Income Tax' ? <Banknote className={cn("my-0.5", iconSize)} /> : <Gem className={cn("my-0.5", iconSize)} />}
+            {space.name === 'Income Tax' ? <Banknote className={cn("my-0.5", iconSize, "text-yellow-400")} /> : <Gem className={cn("my-0.5", iconSize, "text-yellow-400")} />}
             <span>Pay ${space.cost}</span>
           </div>
         );
