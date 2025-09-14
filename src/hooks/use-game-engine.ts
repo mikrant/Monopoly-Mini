@@ -449,7 +449,7 @@ export function useGameEngine() {
         setDice([d1, d2]);
         addLog(`${playerName} rolled a ${d1} and a ${d2}.`);
         setIsRolling(false);
-
+        
         setGameState(produce(draft => {
           if (!draft) return;
           const player = draft.players[draft.currentPlayerIndex];
@@ -459,9 +459,8 @@ export function useGameEngine() {
             player.inJail = false;
             player.jailTurns = 0;
             draft.doublesCount = 0; // Doubles out of jail doesn't grant another turn
-            // The processTurn call is now wrapped in setGameState
             draft.turnState = { type: 'PROCESSING' };
-            movePlayer(d1,d2);
+            movePlayer(d1, d2);
           } else {
             addLog('Not doubles. You remain in jail.');
             setLastEvent({ title: 'Stay in Jail', description: 'Did not roll doubles' });
@@ -637,7 +636,7 @@ export function useGameEngine() {
                 break;
             case 'unmortgage':
                 const mortgageValue = Math.floor(space.price / 2);
-                const unmortgageCost = mortgageValue + Math.ceil(mortgageValue * 0.1);
+                const unmortgageCost = mortgageValue + Math.floor(mortgageValue * 0.1);
                 if ((space as any).mortgaged && player.money >= unmortgageCost) {
                     player.money -= unmortgageCost;
                     (space as any).mortgaged = false;
@@ -749,7 +748,7 @@ export function useGameEngine() {
             }
         } else if(action === 'close_modal') {
              if (currentState.type === 'MANAGING_PROPERTIES' || currentState.type === 'PROPOSING_TRADE' || currentState.type === 'AWAITING_TRADE_RESPONSE') {
-                 draft.turnState = currentState.previousState;
+                 if(currentState.previousState) draft.turnState = currentState.previousState;
              }
         }
     }));
