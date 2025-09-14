@@ -439,16 +439,17 @@ export function useGameEngine() {
 
   const handleJailAction = useCallback((jailAction: 'pay' | 'roll' | 'card') => {
     if (!gameState || gameState.turnState.type !== 'AWAITING_JAIL_ACTION') return;
-    const player = gameState.players[gameState.currentPlayerIndex];
     
     if (jailAction === 'roll') {
       setIsRolling(true);
+      const player = gameState.players[gameState.currentPlayerIndex];
+      const playerName = player.name; // Capture name before async operation
       
       setTimeout(() => {
         const d1 = Math.floor(Math.random() * 6) + 1;
         const d2 = Math.floor(Math.random() * 6) + 1;
         setDice([d1, d2]);
-        addLog(`${player.name} rolled a ${d1} and a ${d2}.`);
+        addLog(`${playerName} rolled a ${d1} and a ${d2}.`);
         setIsRolling(false);
         
         setGameState(produce(draft => {
@@ -461,7 +462,7 @@ export function useGameEngine() {
             playerToUpdate.jailTurns = 0;
             draft.doublesCount = 0; // Doubles out of jail doesn't grant another turn
             draft.turnState = { type: 'PROCESSING' };
-            movePlayer(d1, d2);
+            // This will be handled by movePlayer -> landOnSpace
           } else {
             addLog('Not doubles. You remain in jail.');
             setLastEvent({ title: 'Stay in Jail', description: 'Did not roll doubles' });
@@ -474,7 +475,6 @@ export function useGameEngine() {
                 playerToUpdate.jailTurns = 0;
                 playerToUpdate.transactions.unshift({ description: 'Paid jail fine (3 attempts)', amount: -JAIL_FINE });
                 draft.turnState = { type: 'PROCESSING' };
-                movePlayer(d1, d2);
               } else {
                 const debt: Debt = { debtorId: playerToUpdate.id, amount: JAIL_FINE };
                 draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt };
@@ -484,6 +484,11 @@ export function useGameEngine() {
             }
           }
         }));
+
+        // Move player outside the produce block if they are out of jail
+        if (d1 === d2) {
+          movePlayer(d1, d2);
+        }
       }, 500);
       return;
     }
@@ -637,7 +642,7 @@ export function useGameEngine() {
                 break;
             case 'unmortgage':
                 const mortgageValue = space.price / 2;
-                const unmortgageCost = mortgageValue + (mortgageValue / 10);
+                const unmortgageCost = Math.ceil(mortgageValue * 1.1);
                 if ((space as any).mortgaged && player.money >= unmortgageCost) {
                     player.money -= unmortgageCost;
                     (space as any).mortgaged = false;
@@ -670,11 +675,11 @@ export function useGameEngine() {
   
   const proposeTrade = useCallback((offer: TradeOffer) => {
         setGameState(produce(draft => {
-            if(!draft || (draft.turnState.type !== 'AWAITING_ROLL' && draft.turnState.type !== 'TURN_ENDED')) return;
+            if(!draft || draft.turnState.type !== 'PROPOSING_TRADE') return;
             const logMsg = `${draft.players.find(p => p.id === offer.fromPlayerId)?.name} proposed a trade to ${draft.players.find(p => p.id === offer.toPlayerId)?.name}.`;
             addLog(logMsg);
             setLastEvent({title: 'Trade Proposed', description: logMsg});
-            draft.turnState = { type: 'AWAITING_TRADE_RESPONSE', offer, previousState: draft.turnState };
+            draft.turnState = { type: 'AWAITING_TRADE_RESPONSE', offer, previousState: draft.turnState.previousState };
         }));
     }, [addLog, setLastEvent]);
 
