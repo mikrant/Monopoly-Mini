@@ -11,17 +11,27 @@ import {
   Siren,
   Wrench,
 } from 'lucide-react';
-import type { BoardSpace, Player } from '@/lib/types';
+import type { BoardSpace, Player, PropertyColor } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { JailIcon } from '../icons/jail-icon';
 import './board-space-content.css';
-import { PROPERTY_COLORS } from '@/lib/consts';
 
 interface BoardSpaceContentProps {
   space: BoardSpace;
   ownerId?: number;
   players: Player[];
 }
+
+const PROPERTY_TEXT_COLORS: Record<PropertyColor, string> = {
+  brown: 'text-[#955436]',
+  'light-blue': 'text-[#00AEEF]',
+  pink: 'text-[#d93a96]',
+  orange: 'text-[#f7941d]',
+  red: 'text-[#ed1b24]',
+  yellow: 'text-[#fef200]',
+  green: 'text-[#1fb25a]',
+  'dark-blue': 'text-[#0072bb]',
+};
 
 export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContentProps) {
   const owner = players.find((p) => p.id === ownerId);
@@ -85,12 +95,9 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
     switch (space.type) {
       case 'property':
         return (
-          <div className="w-full h-full flex flex-col">
-            <div className={cn("h-4 w-full flex-shrink-0", PROPERTY_COLORS[space.color])} />
-            <div className="bg-card flex-grow flex flex-col justify-around items-center p-0.5 text-center text-[9px] leading-tight">
-              <span className="font-bold uppercase text-center">{space.name}</span>
+          <div className={cn("bg-card flex-grow flex flex-col justify-around items-center p-0.5 w-full text-center", commonTextStyle)}>
+              <span className={cn("font-bold uppercase text-center", PROPERTY_TEXT_COLORS[space.color])}>{space.name}</span>
               <span>${space.price}</span>
-            </div>
           </div>
         );
       case 'railroad':
