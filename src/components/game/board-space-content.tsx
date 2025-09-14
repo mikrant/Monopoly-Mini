@@ -95,8 +95,8 @@ export function BoardSpaceContent({ space, ownerId, players }: BoardSpaceContent
     switch (space.type) {
       case 'property':
         return (
-          <div className={cn("bg-card flex-grow flex flex-col justify-around items-center p-0.5 w-full text-center", commonTextStyle)}>
-              <span className={cn("font-bold uppercase text-center", PROPERTY_TEXT_COLORS[space.color])}>{space.name}</span>
+          <div className="flex flex-col justify-around items-center p-0.5 w-full text-center text-[9px] leading-tight">
+              <span className={cn("uppercase font-bold text-center", PROPERTY_TEXT_COLORS[space.color])}>{space.name}</span>
               <span>${space.price}</span>
           </div>
         );
