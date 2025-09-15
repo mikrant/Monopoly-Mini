@@ -135,9 +135,9 @@ export function useGameEngine() {
                         rent = RENT_LEVELS[owner.railroads.length - 1];
                         rent *= rentMultiplier;
                     } else if(space.type === 'utility'){
-                        const lastRoll = dice[0] + dice[1];
+                        const lastRollTotal = dice[0] + dice[1];
                         const multiplier = owner.utilities.length === 1 ? 4 : 10;
-                        rent = lastRoll * multiplier;
+                        rent = lastRollTotal * multiplier;
                         rent *= rentMultiplier;
                     }
                     
@@ -433,7 +433,9 @@ export function useGameEngine() {
                 break;
         }
         if(logMsg) setLastEvent({title: 'Card Action', description: logMsg});
-        draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+        if (card.type !== 'advance' && card.type !== 'advance_nearest') {
+          draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+        }
     }));
   }
 
@@ -802,9 +804,3 @@ export function useGameEngine() {
     lastEvent,
   };
 }
-
-    
-
-    
-
-
