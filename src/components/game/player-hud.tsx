@@ -11,6 +11,7 @@ import { CarIcon, DogIcon, HatIcon, ShipIcon, ShoeIcon, ThimbleIcon } from '../i
 import { cn } from '@/lib/utils';
 import { Building, RotateCcw, Gem, Handshake, Home, UserCheck, Wallet } from 'lucide-react';
 import { Badge } from '../ui/badge';
+import { useSidebar } from '../ui/sidebar';
 
 interface PlayerHUDProps {
   players: Player[];
@@ -61,6 +62,7 @@ export function PlayerHUD({
 
     const logScrollAreaRef = useRef<HTMLDivElement>(null);
     const playerRefs = useRef<Record<number, HTMLDivElement | null>>({});
+    const { isMobile, setOpenMobile } = useSidebar();
 
     useEffect(() => {
         if (logScrollAreaRef.current) {
@@ -79,6 +81,13 @@ export function PlayerHUD({
             });
         }
     }, [currentPlayer]);
+    
+    const handlePlayerClick = (player: Player) => {
+        onPlayerClick(player);
+        if (isMobile) {
+            setOpenMobile(false);
+        }
+    }
 
 
   const PlayerItem = forwardRef<HTMLDivElement, { player: Player, isCurrent: boolean }>(({ player, isCurrent }, ref) => {
@@ -87,7 +96,7 @@ export function PlayerHUD({
         <div
           ref={ref}
           className={cn("flex items-center gap-2 p-1.5 rounded-md cursor-pointer hover:bg-muted", isCurrent && "bg-primary/10")}
-          onClick={() => onPlayerClick(player)}
+          onClick={() => handlePlayerClick(player)}
         >
             <div className="flex h-7 w-7 items-center justify-center rounded-full" style={{ backgroundColor: player.color }}>
                 <Icon className="h-4 w-4 text-white" />
@@ -154,7 +163,7 @@ export function PlayerHUD({
   }
 
   return (
-    <Card className="flex h-full w-full flex-col">
+    <Card className="flex h-full w-full flex-col border-0 rounded-none">
       <CardHeader className="flex-row items-center justify-between p-3">
         <CardTitle className="font-headline text-xl">
           {currentPlayer ? `${currentPlayer.name}'s Turn` : "Game Over"}
