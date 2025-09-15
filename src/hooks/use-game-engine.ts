@@ -405,7 +405,7 @@ export function useGameEngine() {
                   setLastEvent({title: 'Passed GO', description: goLogMsg});
                 }
                 landOnSpace(player.id);
-                break;
+                return;
             case 'advance_nearest':
                 let currentPosition = player.position;
                 let nearestPos = -1;
@@ -430,12 +430,10 @@ export function useGameEngine() {
                     addLog(logMsg);
                     landOnSpace(player.id, card.rentMultiplier);
                 }
-                break;
+                return;
         }
         if(logMsg) setLastEvent({title: 'Card Action', description: logMsg});
-        if (card.type !== 'advance' && card.type !== 'advance_nearest') {
-          draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
-        }
+        draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
     }));
   }
 
@@ -806,3 +804,5 @@ export function useGameEngine() {
     lastEvent,
   };
 }
+
+    
