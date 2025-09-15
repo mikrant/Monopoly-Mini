@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { ScrollArea } from '../ui/scroll-area';
-import { Card } from '../ui/card';
+import { Card, CardHeader, CardContent } from '../ui/card';
 import { Switch } from '../ui/switch';
 import { ArrowRightLeft } from 'lucide-react';
 
@@ -122,10 +122,10 @@ export function TradeModal({
                  <div className="grid grid-cols-2 gap-2 h-[45vh]">
                      {/* Current Player's Offer */}
                     <Card className="flex flex-col">
-                        <DialogHeader className="p-2 border-b">
+                        <CardHeader className="p-2 border-b">
                             <DialogTitle className="text-base">{currentPlayer.name}'s Offer</DialogTitle>
-                        </DialogHeader>
-                        <div className="p-2 space-y-2 overflow-y-auto">
+                        </CardHeader>
+                        <CardContent className="p-2 space-y-2 overflow-y-auto">
                             <div>
                                 <Label className="text-xs">Money</Label>
                                 <Input type="number" className="h-8" value={offer.moneyOffered} onChange={e => handleValueChange('moneyOffered', Math.min(currentPlayer.money, parseInt(e.target.value) || 0))} max={currentPlayer.money}/>
@@ -141,15 +141,15 @@ export function TradeModal({
                                     ))}
                                 </ScrollArea>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
 
                     {/* Trade Partner's Request */}
                      <Card className="flex flex-col">
-                        <DialogHeader className="p-2 border-b">
+                        <CardHeader className="p-2 border-b">
                              <DialogTitle className="text-base">{tradePartner.name}'s Offer</DialogTitle>
-                        </DialogHeader>
-                        <div className="p-2 space-y-2 overflow-y-auto">
+                        </CardHeader>
+                        <CardContent className="p-2 space-y-2 overflow-y-auto">
                              <div>
                                 <Label className="text-xs">Money</Label>
                                 <Input type="number" className="h-8" value={offer.moneyRequested} onChange={e => handleValueChange('moneyRequested', Math.min(tradePartner.money, parseInt(e.target.value) || 0))} max={tradePartner.money}/>
@@ -165,7 +165,7 @@ export function TradeModal({
                                     ))}
                                 </ScrollArea>
                             </div>
-                        </div>
+                        </CardContent>
                     </Card>
                  </div>
             )}
@@ -183,14 +183,18 @@ export function TradeModal({
     
     const OfferDetail = ({player, money, properties}: {player: Player, money: number, properties: number[]}) => (
         <Card className="p-2">
-            <DialogTitle className="text-base border-b pb-1 mb-1">{player.name} offers:</DialogTitle>
-            <ScrollArea className="h-28">
-                <ul className="list-disc pl-4 space-y-1 text-xs">
-                    {money > 0 && <li>${money}</li>}
-                    {properties.map(pIdx => <li key={pIdx}>{board[pIdx].name}</li>)}
-                    {properties.length === 0 && money === 0 && <li>Nothing</li>}
-                </ul>
-            </ScrollArea>
+            <CardHeader className="p-0 mb-1">
+              <DialogTitle className="text-base border-b pb-1">{player.name} offers:</DialogTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ScrollArea className="h-28">
+                  <ul className="list-disc pl-4 space-y-1 text-xs">
+                      {money > 0 && <li>${money}</li>}
+                      {properties.map(pIdx => <li key={pIdx}>{board[pIdx].name}</li>)}
+                      {properties.length === 0 && money === 0 && <li>Nothing</li>}
+                  </ul>
+              </ScrollArea>
+            </CardContent>
         </Card>
     );
 

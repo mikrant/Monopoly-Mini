@@ -762,7 +762,9 @@ export function useGameEngine() {
                 draft.turnState = { type: 'PROPOSING_TRADE', previousState: currentState };
             }
         } else if(action === 'close_modal') {
-             if (currentState.type === 'MANAGING_PROPERTIES' || currentState.type === 'PROPOSING_TRADE' || currentState.type === 'AWAITING_TRADE_RESPONSE') {
+             if (currentState.type === 'SHOW_MESSAGE') {
+                draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+             } else if (currentState.type === 'MANAGING_PROPERTIES' || currentState.type === 'PROPOSING_TRADE' || currentState.type === 'AWAITING_TRADE_RESPONSE') {
                  if(currentState.previousState) draft.turnState = currentState.previousState;
              }
         }

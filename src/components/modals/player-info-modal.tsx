@@ -23,7 +23,7 @@ interface PlayerInfoModalProps {
   onClose: () => void;
 }
 
-export function PlayerInfoModal({ player, board, onClose }: PlayerInfoModalProps) {
+export function PlayerInfoModal({ player, onClose, board }: PlayerInfoModalProps) {
   if (!player) return null;
 
   const getPlayerProperties = () => {
@@ -94,7 +94,7 @@ export function PlayerInfoModal({ player, board, onClose }: PlayerInfoModalProps
                   <ScrollArea className="h-40 border rounded-md p-2">
                     {player.transactions.length > 0 ? (
                         <ul className="space-y-1.5">
-                            {[...player.transactions].map((t, i) => (
+                            {[...player.transactions].reverse().map((t, i) => (
                                 <li key={i} className="text-xs flex items-center justify-between">
                                     <div className="flex items-center gap-1.5">
                                         {t.amount > 0 ? <Plus className="h-3 w-3 text-green-500"/> : <Minus className="h-3 w-3 text-red-500"/>}

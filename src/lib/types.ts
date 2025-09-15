@@ -107,6 +107,11 @@ export interface Debt {
     amount: number;
 }
 
+export interface GameMessage {
+    title: string;
+    description: string;
+}
+
 export type TurnState =
   | { type: 'AWAITING_ROLL' }
   | { type: 'PROCESSING' } // Player has rolled, engine is processing move
@@ -118,6 +123,7 @@ export type TurnState =
   | { type: 'PROPOSING_TRADE', previousState: TurnState }
   | { type: 'AWAITING_TRADE_RESPONSE'; offer: TradeOffer, previousState: TurnState }
   | { type: 'AWAITING_CARD_ACTION'; card: Card, isChance: boolean }
+  | { type: 'SHOW_MESSAGE'; message: GameMessage }
   | { type: 'GAME_OVER'; winner: Player };
 
 export interface GameState {

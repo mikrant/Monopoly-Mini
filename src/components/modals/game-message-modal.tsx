@@ -16,7 +16,21 @@ interface GameMessageModalProps {
 }
 
 export function GameMessageModal({ turnState, onClose }: GameMessageModalProps) {
-  // This modal is currently not used in the new engine, but kept for potential future use.
-  // Example usage: turnState.type === 'SHOW_MESSAGE'
-  return null;
+  if (turnState.type !== 'SHOW_MESSAGE') return null;
+
+  return (
+    <AlertDialog open={true}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{turnState.message.title}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {turnState.message.description}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <Button onClick={onClose}>OK</Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
