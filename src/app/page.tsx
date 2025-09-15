@@ -64,37 +64,39 @@ export default function Home() {
 
   return (
     <SidebarProvider>
-    <main className="flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-background">
-      <Sidebar side="right">
-          <SidebarContent>
-              <PlayerHUD
-                players={gameState.players}
-                currentPlayer={currentPlayer}
-                turnState={gameState.turnState}
-                dice={dice}
-                onRollDice={gameActions.rollDice}
-                isRolling={isRolling}
-                onEndTurn={gameActions.endTurn}
-                log={log}
-                lastEvent={lastEvent}
-                onResetGame={handleResetGame}
-                onManageProperties={() => gameActions.handleModalAction('manage_properties')}
-                onTrade={() => gameActions.handleModalAction('trade_prompt')}
-                onJailAction={gameActions.handleJailAction}
-                onPlayerClick={handlePlayerClick}
-              />
-          </SidebarContent>
-      </Sidebar>
-      <SidebarInset>
-        <div className="relative flex h-full w-full items-center justify-center p-4">
-            <div className="absolute top-2 right-2 z-20">
-                <SidebarTrigger />
+      <main className="flex h-dvh w-full flex-col items-center justify-center overflow-hidden bg-background">
+        <SidebarInset>
+            <Sidebar side="right">
+                <SidebarContent>
+                    <PlayerHUD
+                        players={gameState.players}
+                        currentPlayer={currentPlayer}
+                        turnState={gameState.turnState}
+                        dice={dice}
+                        onRollDice={gameActions.rollDice}
+                        isRolling={isRolling}
+                        onEndTurn={gameActions.endTurn}
+                        log={log}
+                        lastEvent={lastEvent}
+                        onResetGame={handleResetGame}
+                        onManageProperties={() => gameActions.handleModalAction('manage_properties')}
+                        onTrade={() => gameActions.handleModalAction('trade_prompt')}
+                        onJailAction={gameActions.handleJailAction}
+                        onPlayerClick={handlePlayerClick}
+                    />
+                </SidebarContent>
+            </Sidebar>
+
+            <div className="relative flex h-full w-full flex-1 flex-col items-center justify-center p-4">
+                <div className="absolute top-2 right-2 z-20">
+                    <SidebarTrigger />
+                </div>
+                <div className="relative flex h-full w-full max-w-full max-h-full items-center justify-center aspect-square">
+                     <Board players={gameState.players} board={gameState.board} onPropertyClick={handlePropertyClick} />
+                </div>
             </div>
-            <div className="relative flex h-full w-full max-w-full max-h-full items-center justify-center aspect-square">
-                 <Board players={gameState.players} board={gameState.board} onPropertyClick={handlePropertyClick} />
-            </div>
-        </div>
-      </SidebarInset>
+        </SidebarInset>
+      </main>
 
       <GameSetup open={showSetup} onGameStart={handleGameStart} />
       
@@ -150,7 +152,6 @@ export default function Home() {
         board={gameState.board}
         onClose={() => setSelectedPlayer(null)}
       />
-    </main>
     </SidebarProvider>
   );
 }

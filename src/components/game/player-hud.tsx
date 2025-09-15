@@ -163,7 +163,7 @@ export function PlayerHUD({
   }
 
   return (
-    <Card className="flex h-full w-full flex-col border-0 rounded-none">
+    <Card className="flex h-full w-full flex-col border-0 rounded-none bg-transparent">
       <CardHeader className="flex-row items-center justify-between p-3">
         <CardTitle className="font-headline text-xl">
           {currentPlayer ? `${currentPlayer.name}'s Turn` : "Game Over"}
@@ -174,7 +174,7 @@ export function PlayerHUD({
         </Button>
       </CardHeader>
       <CardContent className="flex flex-grow flex-col gap-3 overflow-hidden p-3 pt-0">
-        <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted p-2">
+        <div className="flex flex-col items-center justify-center gap-2 rounded-lg bg-muted/50 p-2">
             <h3 className="text-xs font-medium text-muted-foreground">Dice</h3>
             <Dice values={dice} isRolling={isRolling}/>
             {isInJail ? renderJailActions() : renderNormalActions()}
@@ -182,7 +182,7 @@ export function PlayerHUD({
 
         <Separator/>
         
-        <div className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted p-2">
+        <div className="flex flex-col items-center justify-center gap-1 rounded-lg bg-muted/50 p-2">
           <h3 className="text-xs font-medium text-muted-foreground">{lastEvent?.title || 'Last Event'}</h3>
           <p className="text-xs text-center text-foreground h-4">{lastEvent?.description || 'Game started!'}</p>
         </div>
