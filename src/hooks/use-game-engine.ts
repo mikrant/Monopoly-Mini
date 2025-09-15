@@ -127,17 +127,16 @@ export function useGameEngine() {
 
                     let rent = 0;
                     if(space.type === 'property'){
-                        const colorGroup = draft.board.filter(s => s.type === 'property' && s.color === space.color);
-                        const ownerOwnsAll = colorGroup.every(s => (s as any).ownerId === owner.id);
+                        const ownerOwnsAll = draft.board
+                            .filter(s => s.type === 'property' && s.color === space.color)
+                            .every(s => (s as PropertySpace).ownerId === owner.id);
                         rent = ownerOwnsAll && space.houses === 0 ? space.rent[0] * 2 : space.rent[space.houses];
                     } else if (space.type === 'railroad'){
                         const RENT_LEVELS = [25, 50, 100, 200];
                         rent = RENT_LEVELS[owner.railroads.length - 1];
                         rent *= rentMultiplier;
                     } else if(space.type === 'utility'){
-                        const lastRollTotal = dice[0] + dice[1];
-                        const multiplier = owner.utilities.length === 1 ? 4 : 10;
-                        rent = lastRollTotal * multiplier;
+                        rent = (dice[0] + dice[1]) * (owner.utilities.length === 1 ? 4 : 10);
                         rent *= rentMultiplier;
                     }
                     
@@ -316,6 +315,7 @@ export function useGameEngine() {
         if (!draft) return;
         const player = draft.players[draft.currentPlayerIndex];
         let logMsg = '';
+        let shouldEndTurn = true;
 
         switch(card.type) {
             case 'get_out_of_jail':
@@ -329,8 +329,7 @@ export function useGameEngine() {
                     player.transactions.unshift({ description: card.text, amount: -card.amount });
                 } else {
                     draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt: { debtorId: player.id, amount: card.amount } };
-                    addLog(logMsg);
-                    return;
+                    shouldEndTurn = false;
                 }
                 break;
             case 'pay_per_player':
@@ -348,8 +347,7 @@ export function useGameEngine() {
                      });
                  } else {
                     draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt: { debtorId: player.id, amount: totalPaid } };
-                    addLog(logMsg);
-                    return;
+                    shouldEndTurn = false;
                  }
                 break;
             case 'pay_buildings':
@@ -362,8 +360,7 @@ export function useGameEngine() {
                     player.transactions.unshift({ description: card.text, amount: -totalCost });
                 } else {
                     draft.turnState = { type: 'AWAITING_DEBT_PAYMENT', debt: { debtorId: player.id, amount: totalCost } };
-                    addLog(logMsg);
-                    return;
+                    shouldEndTurn = false;
                 }
                 break;
             case 'receive':
@@ -389,14 +386,13 @@ export function useGameEngine() {
                 player.inJail = true;
                 draft.doublesCount = 0;
                 logMsg = `${player.name} was sent to jail.`;
-                addLog(logMsg);
                 draft.turnState = { type: 'TURN_ENDED' };
-                return;
+                shouldEndTurn = false;
+                break;
             case 'advance':
                 const oldPos = player.position;
                 player.position = card.relative ? (oldPos + card.position + 40) % 40 : card.position;
                 logMsg = `${player.name} advanced to ${draft.board[player.position].name}.`;
-                addLog(logMsg);
                 if(player.position < oldPos && !card.relative) {
                   player.money += 200;
                   const goLogMsg = `${player.name} passed GO and collected $200.`;
@@ -405,7 +401,8 @@ export function useGameEngine() {
                   setLastEvent({title: 'Passed GO', description: goLogMsg});
                 }
                 landOnSpace(player.id);
-                return;
+                shouldEndTurn = false;
+                break;
             case 'advance_nearest':
                 let currentPosition = player.position;
                 let nearestPos = -1;
@@ -427,13 +424,18 @@ export function useGameEngine() {
                     }
                     player.position = nearestPos;
                     logMsg = `${player.name} advanced to the nearest ${card.target}, ${draft.board[player.position].name}.`;
-                    addLog(logMsg);
                     landOnSpace(player.id, card.rentMultiplier);
                 }
-                return;
+                shouldEndTurn = false;
+                break;
         }
+
+        if(logMsg) addLog(logMsg);
         if(logMsg) setLastEvent({title: 'Card Action', description: logMsg});
-        draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+        
+        if (shouldEndTurn) {
+            draft.turnState = draft.doublesCount > 0 ? { type: 'AWAITING_ROLL' } : { type: 'TURN_ENDED' };
+        }
     }));
   }
 
@@ -804,5 +806,7 @@ export function useGameEngine() {
     lastEvent,
   };
 }
+
+    
 
     
